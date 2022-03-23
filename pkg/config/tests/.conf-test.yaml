@@ -1,0 +1,6 @@
+polygon:
+  addr: "127.0.0.1"
+  port: 1234
+
+databases:
+  postgres: "postgres_url"
