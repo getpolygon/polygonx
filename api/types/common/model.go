@@ -1,9 +1,13 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type Model struct {
-	ID        string `db:"uuid,primary"`
+	ID        uuid.UUID `db:"uuid,primary"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
