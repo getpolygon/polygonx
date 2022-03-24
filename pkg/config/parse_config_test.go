@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"polygon.am/core/api/types"
 	"polygon.am/core/pkg/config"
+	"polygon.am/core/pkg/types"
 	"polygon.am/core/pkg/util"
 )
 
@@ -26,15 +26,12 @@ func TestParseConfig(t *testing.T) {
 				path: util.AssumeNoError(filepath.Abs("./tests/.conf-test.yaml")),
 			},
 			want: &types.Config{
-				Polygon: struct {
-					Addr string "yaml:\"addr\""
-				}{
-					Addr: "127.0.0.1",
+				Polygon: types.Polygon{
+					Addr: "127.0.0.1:1234",
 				},
-				Databases: struct {
-					Postgres string "yaml:\"postgres\""
-				}{
-					Postgres: "postgres_url",
+				Databases: types.Databases{
+					Redis:    "redis://testing:testing@127.0.0.1:1234/",
+					Postgres: "postgres://testing:testing@127.0.0.1:1234/",
 				},
 			},
 			wantErr: false,

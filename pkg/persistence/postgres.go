@@ -2,36 +2,35 @@ package persistence
 
 import (
 	"context"
-	"database/sql"
 	"log"
 	"os"
+
+	"github.com/jackc/pgx/v4"
 )
 
-// A global variable for accessing PostgreSQL connection pool
-// and using it in various operations.
-var Postgres *sql.DB
+// PostgreSQL connection that will be used for making queries
+// without creating additional clients.
+var Postgres pgx.Conn
 
 func init() {
-	// Getting PostgreSQL connection string from an environment variable,
-	// and failing automatically, by connecting, if the url was not to an
-	// invalid address.
-	//
-	// TODO: Update the name for PostgreSQL connection string environment variable
-	dsn := os.Getenv("")
-
-	conn, connerr := sql.Open("pg", dsn)
-	if connerr != nil {
-		log.Fatal(connerr)
+	dsn := os.Getenv("POLYGON_CORE_DATABASES_POSTGRES")
+	// Connecting to PostgreSQL using the provided connection URL
+	// from the environment variable.
+	conn, err := pgx.Connect(context.Background(), dsn)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// Sending a simple test query to verify connection validity, and assign
-	// the global database connection variable.
-	pingerr := conn.PingContext(context.Background())
-	if pingerr != nil {
-		log.Fatal(pingerr)
+	// Trying to ping the database, to verify that the connection
+	// was initialized successfully.
+	err = conn.Ping(context.Background())
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// Assinging the connection to a global variable if all the procedures
-	// have been executed successfully.
-	Postgres = conn
+	// If all the procedures executed successfully, assigning
+	// the connection to a global variable.
+	Postgres = *conn
+
+	log.Println("connected to postgresql")
 }

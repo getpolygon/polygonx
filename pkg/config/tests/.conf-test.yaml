@@ -1,6 +1,13 @@
+# WARNING
+# ==========
+# THIS FILE IS FOR TESTING PURPOSES ONLY AND SHOULD NOT BE USED AS
+# AN EXAMPLE FOR CONFIGURING POLYGON. USING THESE CREDENTIALS CAN
+# MAKE YOUR DATABASE EXPOSED TO THE PUBLIC, AND YOU MAY LOSE YOUR
+# INFORMATION.
+
 polygon:
-  addr: "127.0.0.1"
-  port: 1234
+  addr: "127.0.0.1:1234"
 
 databases:
-  postgres: "postgres_url"
+  redis: "redis://testing:testing@127.0.0.1:1234/"
+  postgres: "postgres://testing:testing@127.0.0.1:1234/"
