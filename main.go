@@ -4,9 +4,12 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httprate"
+	v1 "polygon.am/core/api/v1"
 	"polygon.am/core/pkg/config"
 	"polygon.am/core/pkg/types"
 )
@@ -37,18 +40,14 @@ func init() {
 
 func main() {
 	router := chi.NewRouter()
-
-	// Binding the middleware to chi router
 	router.Use(middleware.Logger)
 	router.Use(middleware.GetHead)
 	router.Use(middleware.NoCache)
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.Heartbeat("/status"))
-	// This middleware will handle any internal crashes inside
-	// of our application and will send an `500: Internal Server Error`
-	// response.
-	router.Use(middleware.Recoverer)
+	router.Use(httprate.LimitAll(100, 1*time.Minute))
 
+	router.Mount("/api/v1", v1.Router())
 	log.Println("getpolygon/corexp started at http://" + Configuration.Polygon.Addr)
 
 	// Binding to the address specified or defaulted to from the configuration
