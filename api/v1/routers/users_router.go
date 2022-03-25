@@ -7,16 +7,16 @@ import (
 	"github.com/go-chi/render"
 )
 
-// `UsersRouter()` exposes handlers, middleware and routers to the main
-// router of a specific API version.
+// `UsersRouter()` exposes the routers related to users to
+// the main router of a specific API version.
 func UsersRouter() *chi.Mux {
-	router := chi.NewRouter()
-	router.Put("/modify", UpdateUserById)
-	router.Get("/with-id/{id}", GetUserById)
-	router.Get("/{username}", GetUserByUsername)
-	router.Delete("/close-account", CloseUserAccount)
+	r := chi.NewRouter()
+	r.Put("/modify", UpdateUserById)
+	r.Get("/with-id/{id}", GetUserById)
+	r.Get("/{username}", GetUserByUsername)
+	r.Delete("/close-account", CloseUserAccount)
 
-	return router
+	return r
 }
 
 // This endpoint is dedicated to fetching users' public

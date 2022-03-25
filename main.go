@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -16,7 +17,7 @@ import (
 
 // Global, configuration variable for accessing and changing
 // the configuration on demand.
-var Configuration types.Config
+var Configuration *types.Config
 
 // The default path for looking for the default configuration
 // file path, if the environment variable was not supplied.
@@ -34,23 +35,27 @@ func init() {
 	}
 
 	// Assigning parsed configuration to a global variable
-	Configuration = *config
-
+	Configuration = config
 }
 
 func main() {
-	router := chi.NewRouter()
-	router.Use(middleware.Logger)
-	router.Use(middleware.GetHead)
-	router.Use(middleware.NoCache)
-	router.Use(middleware.Recoverer)
-	router.Use(middleware.Heartbeat("/status"))
-	router.Use(httprate.LimitAll(100, 1*time.Minute))
+	r := chi.NewRouter()
 
-	router.Mount("/api/v1", v1.Router())
+	if "production" != os.Getenv("POLYGON_CORE_CONFIG_ENV") {
+		// Only enabling route logging in development
+		r.Use(middleware.Logger)
+	}
+
+	r.Use(middleware.GetHead)
+	r.Use(middleware.NoCache)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Heartbeat("/status"))
+	r.Use(httprate.LimitAll(100, 1*time.Minute))
+
+	r.Mount("/api/v1", v1.Router())
 	log.Println("getpolygon/corexp started at http://" + Configuration.Polygon.Addr)
 
 	// Binding to the address specified or defaulted to from the configuration
 	// and attaching chi routes to the server.
-	http.ListenAndServe(Configuration.Polygon.Addr, router)
+	http.ListenAndServe(Configuration.Polygon.Addr, r)
 }
