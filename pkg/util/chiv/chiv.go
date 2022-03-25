@@ -27,64 +27,68 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package main
+package chiv
 
 import (
-	"log"
 	"net/http"
-	"os"
-	"path/filepath"
-	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/httprate"
-	v1 "polygon.am/core/api/v1"
-	"polygon.am/core/pkg/config"
-	"polygon.am/core/pkg/types"
+	o "github.com/go-ozzo/ozzo-validation"
 )
 
-// Global, configuration variable for accessing and changing
-// the configuration on demand.
-var Configuration *types.Config
+// ChivField will contain the value of the validatable field
+// and the custom validation that will need to be applied to
+// it.
+type ChivSection = map[string]o.Rule
 
-// The default path for looking for the default configuration
-// file path, if the environment variable was not supplied.
-const DefaultConfigurationFilePath string = "./.conf.yaml"
-
-func init() {
-	path, err := filepath.Abs(DefaultConfigurationFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	config, err := config.ParseConfig(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Assigning parsed configuration to a global variable
-	Configuration = config
+// Chiv is a simple validator for chi, which contains request
+// parts that will need to be validated by go-ozzo, including
+// URL query, params, headers, etc.
+type Chiv struct {
+	Params  ChivSection
+	Query   ChivSection
+	Headers ChivSection
 }
 
-func main() {
-	r := chi.NewRouter()
-
-	if "production" != os.Getenv("POLYGON_CORE_CONFIG_ENV") {
-		// Only enabling route logging in development
-		r.Use(middleware.Logger)
+func implValidationFor(section ChivSection, vFunc func(field string, rule o.Rule) error) error {
+	for field := range section {
+		rule := section[field]
+		err := vFunc(field, rule)
+		if err != nil {
+			return err
+		}
 	}
 
-	r.Use(middleware.GetHead)
-	r.Use(middleware.NoCache)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Heartbeat("/status"))
-	r.Use(httprate.LimitAll(100, 1*time.Minute))
+	return nil
+}
 
-	r.Mount("/api/v1", v1.Router())
-	log.Println("getpolygon/corexp started at http://" + Configuration.Polygon.Addr)
+func (c *Chiv) Validate(r *http.Request) error {
+	err := implValidationFor(c.Params, func(field string, validator o.Rule) error {
+		param := chi.URLParam(r, field)
+		err := o.Validate(param, validator)
+		return err
+	})
+	if err != nil {
+		return err
+	}
 
-	// Binding to the address specified or defaulted to from the configuration
-	// and attaching chi routes to the server.
-	http.ListenAndServe(Configuration.Polygon.Addr, r)
+	err = implValidationFor(c.Query, func(field string, validator o.Rule) error {
+		query := r.URL.Query().Get(field)
+		err := o.Validate(query, validator)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	err = implValidationFor(c.Headers, func(field string, validator o.Rule) error {
+		header := r.Header.Get(field)
+		err := o.Validate(header, validator)
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
