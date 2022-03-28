@@ -32,59 +32,54 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
+	"github.com/spf13/viper"
 	v1 "polygon.am/core/api/v1"
-	"polygon.am/core/pkg/config"
-	"polygon.am/core/pkg/types"
+	config "polygon.am/core/pkg"
 )
 
-// Global, configuration variable for accessing and changing
-// the configuration on demand.
-var Configuration *types.Config
-
-// The default path for looking for the default configuration
-// file path, if the environment variable was not supplied.
-const DefaultConfigurationFilePath string = "./.conf.yaml"
-
 func init() {
-	path, err := filepath.Abs(DefaultConfigurationFilePath)
+	// Loading the configuration in viper
+	err := config.Load()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("config error:", err)
 	}
-
-	config, err := config.ParseConfig(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Assigning parsed configuration to a global variable
-	Configuration = config
 }
 
 func main() {
 	r := chi.NewRouter()
 
-	if "production" != os.Getenv("POLYGON_CORE_CONFIG_ENV") {
-		// Only enabling route logging in development
+	// Only enabling request logging if it is specified
+	// in the config.
+	if viper.GetBool("polygon.general.logRequests") {
 		r.Use(middleware.Logger)
 	}
 
 	r.Use(middleware.GetHead)
 	r.Use(middleware.NoCache)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Heartbeat("/status"))
-	r.Use(httprate.LimitAll(100, 1*time.Minute))
 
-	r.Mount("/api/v1", v1.Router())
-	log.Println("getpolygon/corexp started at http://" + Configuration.Polygon.Addr)
+	// Only enabling the heartbeat route, if it is specified
+	// in the config.
+	if viper.GetBool("polygon.general.enableHeartbeatRoute") {
+		r.Use(middleware.Heartbeat("/status"))
+	}
 
-	// Binding to the address specified or defaulted to from the configuration
-	// and attaching chi routes to the server.
-	http.ListenAndServe(Configuration.Polygon.Addr, r)
+	requestLimit := viper.GetInt("polygon.security.requests.max")
+	windowLength := viper.GetInt("polygon.security.requests.threshold")
+	r.Use(httprate.LimitAll(requestLimit, time.Duration(windowLength)))
+
+	r.Group(func(r chi.Router) {
+		r.Mount("/api/v1", v1.Router())
+	})
+
+	// Getting the connection address from the configuration and
+	// attempting to bind to it.
+	addr := viper.GetString("polygon.general.addr")
+	log.Println("corexp started at http://" + addr)
+	log.Fatalln(http.ListenAndServe(addr, r))
 }
