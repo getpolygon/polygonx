@@ -33,7 +33,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
+	"github.com/spf13/viper"
 )
 
 // `AuthRouter()` exposes the routes related to authentication flow to the
@@ -47,9 +47,21 @@ func AuthRouter() *chi.Mux {
 }
 
 func SignIn(w http.ResponseWriter, r *http.Request) {
-	render.JSON(w, r, "sign in")
+	// username := r.Form.Get("username")
+	// password := r.Form.Get("password")
+
+	// TODO: Find the user by their username or email address.
 }
 
 func SignUp(w http.ResponseWriter, r *http.Request) {
-	render.JSON(w, r, "sign up")
+	// name := r.Form.Get("name")
+	// email := r.Form.Get("email")
+	// username := r.Form.Get("username")
+	// password := r.Form.Get("password")
+
+	if viper.GetBool("polygon.security.accounts.forceEmailVerification") {
+		// TODO: Handle user sign up, with email verification.
+	}
+
+	// TODO: Handle user sign up without email verification.
 }

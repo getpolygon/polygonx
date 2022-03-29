@@ -27,67 +27,61 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package main
+package v1_test
 
 import (
-	"log"
 	"net/http"
-	"time"
+	"net/http/httptest"
+	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/httprate"
-	"github.com/spf13/viper"
 	v1 "polygon.am/core/api/v1"
-	"polygon.am/core/pkg/config"
-	"polygon.am/core/pkg/persistence"
 )
 
-func init() {
-	// Loading the configuration via viper
-	err := config.Load()
-	if err != nil {
-		log.Fatal("config error:", err)
-	}
+func executeRequest(req *http.Request, router *chi.Mux) *httptest.ResponseRecorder {
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	return rr
+}
 
-	// Connecting to the database and loading the queries generated
-	// by sqlc.
-	err = persistence.Connect()
-	if err != nil {
-		log.Fatal("postgres error:", err)
+func checkResponseCode(t *testing.T, expected, actual int) {
+	if expected != actual {
+		t.Errorf("Expected response code: %d. Got %d\n", expected, actual)
 	}
 }
 
-func main() {
-	r := chi.NewRouter()
-
-	// Only enabling request logging if it is specified
-	// in the config.
-	if viper.GetBool("polygon.security.requests.log") {
-		r.Use(middleware.Logger)
+func TestV1StatusCodes(t *testing.T) {
+	r := v1.Router()
+	tests := []struct {
+		Expected int
+		Path     string
+		Method   string
+	}{
+		{
+			Method:   http.MethodGet,
+			Path:     "/users/example",
+			Expected: http.StatusUnauthorized,
+		},
+		{
+			Method:   http.MethodGet,
+			Path:     "/posts/12345678",
+			Expected: http.StatusUnauthorized,
+		},
+		{
+			Method:   http.MethodGet,
+			Path:     "/auth/signin",
+			Expected: http.StatusMethodNotAllowed,
+		},
+		{
+			Method:   http.MethodGet,
+			Path:     "/auth/signup",
+			Expected: http.StatusMethodNotAllowed,
+		},
 	}
 
-	r.Use(middleware.GetHead)
-	r.Use(middleware.NoCache)
-	r.Use(middleware.Recoverer)
-
-	// Only enabling the heartbeat route, if it is specified
-	// in the config.
-	if viper.GetBool("polygon.general.heartbeat") {
-		r.Use(middleware.Heartbeat("/status"))
+	for _, tt := range tests {
+		req, _ := http.NewRequest(tt.Method, tt.Path, nil)
+		res := executeRequest(req, r)
+		checkResponseCode(t, tt.Expected, res.Code)
 	}
-
-	requestLimit := viper.GetInt("polygon.security.requests.max")
-	windowLength := viper.GetInt("polygon.security.requests.timespan")
-	r.Use(httprate.LimitAll(requestLimit, time.Duration(windowLength)))
-
-	r.Group(func(r chi.Router) {
-		r.Mount("/api/v1", v1.Router())
-	})
-
-	// Getting the connection address from the configuration and
-	// attempting to bind to it.
-	addr := viper.GetString("polygon.general.addr")
-	log.Println("corexp started at http://" + addr)
-	log.Fatalln(http.ListenAndServe(addr, r))
 }

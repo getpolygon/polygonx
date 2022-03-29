@@ -12,7 +12,10 @@
 *.dll
 *.so
 *.dylib
+
+# Debug binary and debugging-related stuff
 __debug_bin
+.vscode/launch.json
 
 # Test binary, built with `go test -c`
 *.test
@@ -33,6 +36,5 @@ go.work
 # End of https://www.toptal.com/developers/gitignore/api/go
 
 # Configuration files
-conf.yaml
-.conf.yaml
-.vscode/launch.json
+conf.y*ml
+.conf.y*ml
