@@ -5,20 +5,22 @@ package codegen
 import (
 	"database/sql"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Comment struct {
-	ID        int32     `json:"id"`
-	PostID    int32     `json:"post_id"`
-	UserID    int32     `json:"user_id"`
+	ID        uuid.UUID `json:"id"`
+	PostID    uuid.UUID `json:"post_id"`
+	UserID    uuid.UUID `json:"user_id"`
 	Content   string    `json:"content"`
 	UpdatedAt time.Time `json:"updated_at"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 type Post struct {
-	ID        int32          `json:"id"`
-	UserID    int32          `json:"user_id"`
+	ID        uuid.UUID      `json:"id"`
+	UserID    uuid.UUID      `json:"user_id"`
 	Title     string         `json:"title"`
 	Content   sql.NullString `json:"content"`
 	UpdatedAt time.Time      `json:"updated_at"`
@@ -26,14 +28,14 @@ type Post struct {
 }
 
 type Upvote struct {
-	ID        int32     `json:"id"`
-	PostID    int32     `json:"post_id"`
-	UserID    int32     `json:"user_id"`
+	ID        uuid.UUID `json:"id"`
+	PostID    uuid.UUID `json:"post_id"`
+	UserID    uuid.UUID `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 type User struct {
-	ID        int32     `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	Password  string    `json:"password"`
 	Email     string    `json:"email"`

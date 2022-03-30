@@ -4,5 +4,5 @@ packages:
     name: "codegen"
     engine: "postgresql"
     emit_json_tags: true
-    schema: "pkg/persistence/schema.sql"
-    queries: "pkg/persistence/query.sql"
+    queries: "pkg/persistence/queries/"
+    schema: "pkg/persistence/migrations/"

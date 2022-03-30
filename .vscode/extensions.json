@@ -1,0 +1,12 @@
+{
+    "recommendations": [
+        "golang.go",
+        "ms-vscode.references-view",
+        "streetsidesoftware.code-spell-checker",
+    ],
+    "unwantedRecommendations": [
+        "kiteco.kite",
+        "golang.go-nightly",
+        "TabNine.tabnine-vscode",
+    ]
+}

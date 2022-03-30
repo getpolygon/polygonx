@@ -30,13 +30,9 @@
 package routers
 
 import (
-	"context"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
-	"polygon.am/core/pkg/persistence"
 )
 
 // `PostsRouter()` exposes the routes related to posts to the
@@ -51,25 +47,7 @@ func PostsRouter() *chi.Mux {
 	return r
 }
 
-func GetPostById(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		render.Status(r, http.StatusBadRequest)
-		render.JSON(w, r, "invalid id")
-		return
-	}
-
-	post, err := persistence.Queries.GetPostByID(context.Background(), int32(id))
-	if err != nil {
-		render.Status(r, http.StatusInternalServerError)
-		render.JSON(w, r, "internal error: "+err.Error())
-		return
-	}
-
-	render.Status(r, http.StatusOK)
-	render.JSON(w, r, post)
-	return
-}
+func GetPostById(w http.ResponseWriter, r *http.Request) {}
 
 func DeletePostById(w http.ResponseWriter, r *http.Request) {}
 
