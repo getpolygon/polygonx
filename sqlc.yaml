@@ -1,0 +1,8 @@
+version: "1"
+packages:
+  - path: "pkg/persistence/codegen"
+    name: "codegen"
+    engine: "postgresql"
+    emit_json_tags: true
+    schema: "pkg/persistence/schema.sql"
+    queries: "pkg/persistence/query.sql"
