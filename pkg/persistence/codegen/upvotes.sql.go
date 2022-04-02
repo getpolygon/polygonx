@@ -9,33 +9,33 @@ import (
 	"github.com/google/uuid"
 )
 
-const deletePostUpvoteByID = `-- name: DeletePostUpvoteByID :exec
-delete from upvotes where id = $1
+const deletePostUpvoteOfUser = `-- name: DeletePostUpvoteOfUser :exec
+delete from upvotes where ("user", "post") = ($1, $2)
 `
 
-func (q *Queries) DeletePostUpvoteByID(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deletePostUpvoteByID, id)
+type DeletePostUpvoteOfUserParams struct {
+	User   string `json:"user"`
+	User_2 string `json:"user_2"`
+}
+
+func (q *Queries) DeletePostUpvoteOfUser(ctx context.Context, arg DeletePostUpvoteOfUserParams) error {
+	_, err := q.db.ExecContext(ctx, deletePostUpvoteOfUser, arg.User, arg.User_2)
 	return err
 }
 
-const insertPostUpvoteByID = `-- name: InsertPostUpvoteByID :one
-insert into upvotes (user_id, post_id) 
-values ($1, $2) returning id, post_id, user_id, created_at
+const insertPostUpvoteByUser = `-- name: InsertPostUpvoteByUser :one
+insert into upvotes ("user", "post") 
+values ($1, $2) returning post, "user", created_at
 `
 
-type InsertPostUpvoteByIDParams struct {
-	UserID uuid.UUID `json:"user_id"`
-	PostID uuid.UUID `json:"post_id"`
+type InsertPostUpvoteByUserParams struct {
+	User string    `json:"user"`
+	Post uuid.UUID `json:"post"`
 }
 
-func (q *Queries) InsertPostUpvoteByID(ctx context.Context, arg InsertPostUpvoteByIDParams) (Upvote, error) {
-	row := q.db.QueryRowContext(ctx, insertPostUpvoteByID, arg.UserID, arg.PostID)
+func (q *Queries) InsertPostUpvoteByUser(ctx context.Context, arg InsertPostUpvoteByUserParams) (Upvote, error) {
+	row := q.db.QueryRowContext(ctx, insertPostUpvoteByUser, arg.User, arg.Post)
 	var i Upvote
-	err := row.Scan(
-		&i.ID,
-		&i.PostID,
-		&i.UserID,
-		&i.CreatedAt,
-	)
+	err := row.Scan(&i.Post, &i.User, &i.CreatedAt)
 	return i, err
 }

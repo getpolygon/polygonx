@@ -1,15 +1,12 @@
 -- name: GetUserByUsername :one
-select
-    id,
-    "name",
-    username,
-    created_at
-from users where username = $1 limit 1; 
+select * from "users" where "username" = $1 limit 1; 
 
--- name: GetUserByID :one
-select
-    id,
-    "name",
-    username,
-    created_at
-from users where id = $1 limit 1;
+-- name: InsertUser :one
+insert into "users" ("name", "username", "email", "password") 
+values ($1, $2, $3, $4) returning *;
+
+-- name: DeleteUserByUsername :exec
+delete from "users" where "username" = $1;
+
+-- name: DeleteUserByEmail :exec
+delete from "users" where "email" = $1;

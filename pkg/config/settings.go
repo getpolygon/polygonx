@@ -9,7 +9,7 @@ import (
 
 // Use a single instance of Validate, so that it caches
 // struct info.
-var validate *validator.Validate
+var validate = validator.New()
 
 // This is an enum, which represents the selected mailing
 // interface from the configuration that is going to be
@@ -38,15 +38,15 @@ type Config struct {
 		}
 
 		Mail *struct {
-			TemplatesLocation *string      `validate:"dir"`
-			Client            *EmailClient `validate:"alpha"`
+			TemplatesLocation *string `validate:"dir"`
+			Client            *EmailClient
 		}
 
 		Security *struct {
 			SMTP *struct {
-				Secure bool `validate:"bool"`
 				User   string
 				Pass   string
+				Secure bool   `validate:"boolean"`
 				Port   string `validate:"number"`
 				Host   string `validate:"url"`
 			}
@@ -70,10 +70,9 @@ type Config struct {
 	}
 }
 
-func init() {
-	validate = validator.New()
-}
-
+// This function will attempt to load the YAML configuration
+// from the supported directories. If something fails or is
+// invalid, the function will throw an error.
 func Load() error {
 	viper.SetConfigType("yaml")
 	viper.SetConfigName(".conf")
@@ -87,28 +86,25 @@ func Load() error {
 	// that have not been specified.
 	viper.SetDefault("polygon.general.heartbeat", true)
 	viper.SetDefault("polygon.general.addr", "127.0.0.1:8234")
-	viper.SetDefault("polygon.security.jwt.issuer", "getpolygon")
 	viper.SetDefault("polygon.security.requests.max", 200)
 	viper.SetDefault("polygon.security.requests.log", false)
+	viper.SetDefault("polygon.security.jwt.issuer", "getpolygon")
 	viper.SetDefault("polygon.security.requests.timespan", 1*time.Minute)
 	viper.SetDefault("polygon.security.accounts.forceEmailVerification", false)
 
 	// Reading the configuration via viper
-	err := viper.ReadInConfig()
-	if err != nil {
+	if err := viper.ReadInConfig(); err != nil {
 		return err
 	}
 
 	var config Config
 	// Parsing YAML configuration file into a Go struct
-	err = viper.UnmarshalExact(&config)
-	if err != nil {
+	if err := viper.Unmarshal(&config); err != nil {
 		return err
 	}
 
 	// Validating the configuration using the `go-playground/validator` package
-	err = validate.Struct(&config)
-	if err != nil {
+	if err := validate.Struct(&config); err != nil {
 		return err
 	}
 

@@ -2,6 +2,7 @@
     "recommendations": [
         "golang.go",
         "ms-vscode.references-view",
+        "ms-azuretools.vscode-docker",
         "streetsidesoftware.code-spell-checker",
     ],
     "unwantedRecommendations": [

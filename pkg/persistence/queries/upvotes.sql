@@ -1,6 +1,6 @@
--- name: InsertPostUpvoteByID :one
-insert into upvotes (user_id, post_id) 
+-- name: InsertPostUpvoteByUser :one
+insert into upvotes ("user", "post") 
 values ($1, $2) returning *;
 
--- name: DeletePostUpvoteByID :exec
-delete from upvotes where id = $1;
+-- name: DeletePostUpvoteOfUser :exec
+delete from upvotes where ("user", "post") = ($1, $2);

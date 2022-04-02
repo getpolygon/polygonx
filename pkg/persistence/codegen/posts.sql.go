@@ -6,85 +6,49 @@ package codegen
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/google/uuid"
 )
 
 const getPostByID = `-- name: GetPostByID :one
-select
-    p.id,
-    p.title,
-    p.content,
-    p.created_at
-from posts p inner join (
-    select id, "name", username from users u
-) u ON p.user_id = u.id
-where p.id = $1 limit 1
+select id, "user", title, content, updated_at, created_at from "posts" where "id" = $1
 `
 
-type GetPostByIDRow struct {
-	ID        uuid.UUID      `json:"id"`
-	Title     string         `json:"title"`
-	Content   sql.NullString `json:"content"`
-	CreatedAt time.Time      `json:"created_at"`
-}
-
-func (q *Queries) GetPostByID(ctx context.Context, id uuid.UUID) (GetPostByIDRow, error) {
+func (q *Queries) GetPostByID(ctx context.Context, id uuid.UUID) (Post, error) {
 	row := q.db.QueryRowContext(ctx, getPostByID, id)
-	var i GetPostByIDRow
+	var i Post
 	err := row.Scan(
 		&i.ID,
+		&i.User,
 		&i.Title,
 		&i.Content,
+		&i.UpdatedAt,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
-const getPostsOfUserByUsername = `-- name: GetPostsOfUserByUsername :many
-select
-    p.id,
-    p.title,
-    p.content,
-    p.created_at
-from posts p inner join (
-    select id, "name", username from users u
-) u ON p.user_id = u.id
-where u.username = $1
+const insertPost = `-- name: InsertPost :one
+insert into "posts" ("user", "title", "content")
+values ($1, $2, $3) returning id, "user", title, content, updated_at, created_at
 `
 
-type GetPostsOfUserByUsernameRow struct {
-	ID        uuid.UUID      `json:"id"`
-	Title     string         `json:"title"`
-	Content   sql.NullString `json:"content"`
-	CreatedAt time.Time      `json:"created_at"`
+type InsertPostParams struct {
+	User    string         `json:"user"`
+	Title   string         `json:"title"`
+	Content sql.NullString `json:"content"`
 }
 
-func (q *Queries) GetPostsOfUserByUsername(ctx context.Context, username string) ([]GetPostsOfUserByUsernameRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPostsOfUserByUsername, username)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetPostsOfUserByUsernameRow
-	for rows.Next() {
-		var i GetPostsOfUserByUsernameRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Content,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) InsertPost(ctx context.Context, arg InsertPostParams) (Post, error) {
+	row := q.db.QueryRowContext(ctx, insertPost, arg.User, arg.Title, arg.Content)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.User,
+		&i.Title,
+		&i.Content,
+		&i.UpdatedAt,
+		&i.CreatedAt,
+	)
+	return i, err
 }

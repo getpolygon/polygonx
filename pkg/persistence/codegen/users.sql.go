@@ -5,61 +5,67 @@ package codegen
 
 import (
 	"context"
-	"time"
-
-	"github.com/google/uuid"
 )
 
-const getUserByID = `-- name: GetUserByID :one
-select
-    id,
-    "name",
-    username,
-    created_at
-from users where id = $1 limit 1
+const deleteUserByEmail = `-- name: DeleteUserByEmail :exec
+delete from "users" where "email" = $1
 `
 
-type GetUserByIDRow struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Username  string    `json:"username"`
-	CreatedAt time.Time `json:"created_at"`
+func (q *Queries) DeleteUserByEmail(ctx context.Context, email string) error {
+	_, err := q.db.ExecContext(ctx, deleteUserByEmail, email)
+	return err
 }
 
-func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error) {
-	row := q.db.QueryRowContext(ctx, getUserByID, id)
-	var i GetUserByIDRow
+const deleteUserByUsername = `-- name: DeleteUserByUsername :exec
+delete from "users" where "username" = $1
+`
+
+func (q *Queries) DeleteUserByUsername(ctx context.Context, username string) error {
+	_, err := q.db.ExecContext(ctx, deleteUserByUsername, username)
+	return err
+}
+
+const getUserByUsername = `-- name: GetUserByUsername :one
+select name, email, password, username, created_at from "users" where "username" = $1 limit 1
+`
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByUsername, username)
+	var i User
 	err := row.Scan(
-		&i.ID,
 		&i.Name,
+		&i.Email,
+		&i.Password,
 		&i.Username,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
-const getUserByUsername = `-- name: GetUserByUsername :one
-select
-    id,
-    "name",
-    username,
-    created_at
-from users where username = $1 limit 1
+const insertUser = `-- name: InsertUser :one
+insert into "users" ("name", "username", "email", "password") 
+values ($1, $2, $3, $4) returning name, email, password, username, created_at
 `
 
-type GetUserByUsernameRow struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Username  string    `json:"username"`
-	CreatedAt time.Time `json:"created_at"`
+type InsertUserParams struct {
+	Name     string `json:"name"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error) {
-	row := q.db.QueryRowContext(ctx, getUserByUsername, username)
-	var i GetUserByUsernameRow
+func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, insertUser,
+		arg.Name,
+		arg.Username,
+		arg.Email,
+		arg.Password,
+	)
+	var i User
 	err := row.Scan(
-		&i.ID,
 		&i.Name,
+		&i.Email,
+		&i.Password,
 		&i.Username,
 		&i.CreatedAt,
 	)
