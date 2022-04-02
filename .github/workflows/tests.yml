@@ -8,25 +8,11 @@ on:
 
 name: run tests
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.18.x
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Run linters
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: v1.29
-
   test:
     strategy:
       matrix:
-        go-version: [1.17.x]
-        platform: [ubuntu-latest, macos-latest, windows-latest]
+        go-version: [1.18.x]
+        platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Install Go
@@ -37,25 +23,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Run tests
-        run: go test -v -covermode=count
+        run: go test -v -covermode=count ./...
 
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Go
-        if: success()
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.17.x
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Calc coverage
-        run: |
-          go test -v -covermode=count -coverprofile=coverage.out ./...
-      - name: Convert coverage.out to coverage.lcov
-        uses: jandelgado/gcov2lcov-action@v1.0.6
-      - name: Coveralls
-        uses: coverallsapp/github-action@v1.1.2
-        with:
-          github-token: ${{ secrets.github_token }}
-          path-to-lcov: coverage.lcov
+#   coverage:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Install Go
+#         if: success()
+#         uses: actions/setup-go@v2
+#         with:
+#           go-version: 1.17.x
+#       - name: Checkout code
+#         uses: actions/checkout@v2
+#       - name: Calc coverage
+#         run: |
+#           go test -v -covermode=count -coverprofile=coverage.out ./...
+#       - name: Convert coverage.out to coverage.lcov
+#         uses: jandelgado/gcov2lcov-action@v1.0.6
+#       - name: Coveralls
+#         uses: coverallsapp/github-action@v1.1.2
+#         with:
+#           github-token: ${{ secrets.github_token }}
+#           path-to-lcov: coverage.lcov
