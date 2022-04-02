@@ -11,7 +11,7 @@ import (
 
 type Post struct {
 	ID        uuid.UUID      `json:"id"`
-	User      string         `json:"user"`
+	User      uuid.UUID      `json:"user"`
 	Title     string         `json:"title"`
 	Content   sql.NullString `json:"content"`
 	UpdatedAt time.Time      `json:"updated_at"`
@@ -20,11 +20,12 @@ type Post struct {
 
 type Upvote struct {
 	Post      uuid.UUID `json:"post"`
-	User      string    `json:"user"`
+	User      uuid.UUID `json:"user"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 type User struct {
+	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Password  string    `json:"password"`

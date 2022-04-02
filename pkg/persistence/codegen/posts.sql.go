@@ -34,7 +34,7 @@ values ($1, $2, $3) returning id, "user", title, content, updated_at, created_at
 `
 
 type InsertPostParams struct {
-	User    string         `json:"user"`
+	User    uuid.UUID      `json:"user"`
 	Title   string         `json:"title"`
 	Content sql.NullString `json:"content"`
 }

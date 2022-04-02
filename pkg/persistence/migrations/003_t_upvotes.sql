@@ -1,7 +1,7 @@
 -- Write your migrate up statements here
 CREATE TABLE "upvotes" (
     "post"        UUID            NOT NULL REFERENCES posts("id"),
-    "user"        VARCHAR         NOT NULL REFERENCES users("id"),
+    "user"        UUID            NOT NULL REFERENCES users("id"),
     "created_at"  TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     PRIMARY KEY ("post", "user")
 );
