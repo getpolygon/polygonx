@@ -24,11 +24,20 @@ func Connect() error {
 		return errors.New("postgres dsn string cannot be empty.")
 	}
 
+	// Attempting to open a connection to PostgreSQL
 	if conn, err := sql.Open("postgres", dsn); err != nil {
 		defer conn.Close()
 		return err
 	} else {
-		Queries = codegen.New(conn)
-		return nil
+		// Executing a ping request to PostgreSQL, to completely
+		// verify that the connection has been established successfully.
+		if err := conn.Ping(); err != nil {
+			return err
+		} else {
+			// Assigning the connection to all the queries for global
+			// usage.
+			Queries = codegen.New(conn)
+			return nil
+		}
 	}
 }
