@@ -36,8 +36,8 @@ import (
 	"polygon.am/core/api/v1/routers"
 )
 
-// This router includes all routes that are being used by the v1
-// API of Polygon.
+// This function will return all routes that are necessary
+// for working with the version 1 API of Polygon.
 func Router() *chi.Mux {
 	r := chi.NewRouter()
 
@@ -46,7 +46,6 @@ func Router() *chi.Mux {
 	r.Mount("/auth", routers.AuthRouter())
 
 	r.Group(func(r chi.Router) {
-		// Using JWT authentication on all API routes
 		r.Use(jwtauth.Verifier(auth.Strategy))
 		r.Use(jwtauth.Authenticator)
 

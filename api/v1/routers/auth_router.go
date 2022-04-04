@@ -33,35 +33,46 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/spf13/viper"
 )
 
-// `AuthRouter()` exposes the routes related to authentication flow to the
-// main router of a specific API version.
 func AuthRouter() *chi.Mux {
 	r := chi.NewRouter()
+
 	r.Post("/signin", SignIn)
 	r.Post("/signup", SignUp)
+	r.Post("/close-account", CloseAccount)
+	r.Post("/signup/confirm", SignUpConfirmation)
 
 	return r
 }
 
-func SignIn(w http.ResponseWriter, r *http.Request) {
-	// username := r.Form.Get("username")
-	// password := r.Form.Get("password")
+// This route is used for confirming user registration. It is only
+// enabled if `polygon.security.accounts.forceEmailVerification` is
+// forced from the configuration, and the required options in the
+// config have valid values.
+func SignUpConfirmation(w http.ResponseWriter, r *http.Request) {
 
-	// TODO: Find the user by their username or email address.
 }
 
+// The sign in route is where the users will be able to and
+// consume the API via the provided jwt token send in the
+// JSON response.
+func SignIn(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// This route is used for creating an account for the users. It
+// executes instantly, without any need for email validation if
+// the `polygon.security.accounts.forceEmailVerification` option
+// in the config is either unspecified or is of value `false`.
 func SignUp(w http.ResponseWriter, r *http.Request) {
-	// name := r.Form.Get("name")
-	// email := r.Form.Get("email")
-	// username := r.Form.Get("username")
-	// password := r.Form.Get("password")
 
-	if viper.GetBool("polygon.security.accounts.forceEmailVerification") {
-		// TODO: Handle user sign up, with email verification.
-	}
+}
 
-	// TODO: Handle user sign up without email verification.
+// This route is used for deleting user accounts. The process is
+// straightforward and does not need to be verified by email. It
+// executes instantly, and deletes all the information associated
+// with the user, including user settings, posts, comments, etc.
+func CloseAccount(w http.ResponseWriter, r *http.Request) {
+
 }
