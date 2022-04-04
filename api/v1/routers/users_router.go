@@ -37,8 +37,8 @@ import (
 
 func UsersRouter() *chi.Mux {
 	r := chi.NewRouter()
-	r.Put("/modify", UpdateUserById)
-	r.Get("/with-id/{id}", GetUserById)
+	r.Put("/modify", UpdateUserByID)
+	r.Get("/with-id/{id}", GetUserByID)
 	r.Get("/{username}", GetUserByUsername)
 
 	return r
@@ -56,11 +56,11 @@ func GetUserByUsername(w http.ResponseWriter, r *http.Request) {
 // their public ID. This endpoint will not return any private
 // data points, such as user creation date, email, password,
 // configuration, etc.
-func GetUserById(w http.ResponseWriter, r *http.Request) {
+func GetUserByID(w http.ResponseWriter, r *http.Request) {
 
 }
 
 // This route
-func UpdateUserById(w http.ResponseWriter, r *http.Request) {
+func UpdateUserByID(w http.ResponseWriter, r *http.Request) {
 
 }
