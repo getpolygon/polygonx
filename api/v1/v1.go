@@ -32,7 +32,7 @@ package v1
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth"
-	auth "polygon.am/core/api/v1/middleware/auth"
+	"polygon.am/core/api/v1/middleware/auth"
 	"polygon.am/core/api/v1/routers"
 )
 

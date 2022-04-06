@@ -27,25 +27,20 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package middleware
+package auth
 
 import (
 	"github.com/go-chi/jwtauth"
 	"github.com/spf13/viper"
 )
 
-// A global JWT authentication strategy which will be used as
-// a chi jwtauth.Verifier middleware value to find, verify and
-// validate the
 var Strategy *jwtauth.JWTAuth
 
 func init() {
-	// Getting the signing key from an environment variable and panicing
-	// if it was not specified or was empty.
-	pkey := viper.GetString("polygon.security.jwt.secret")
+	secretKey := getSecretKey()
+	Strategy = jwtauth.New("HS256", secretKey, nil)
+}
 
-	// Creating a new JWT strategy using the private key
-	// from the environment variableand assigning it to
-	// a global variable.
-	Strategy = jwtauth.New("HS256", []byte(pkey), nil)
+func getSecretKey() string {
+	return viper.GetString("polygon.security.jwt.secret")
 }

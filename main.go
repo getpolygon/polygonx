@@ -45,15 +45,13 @@ import (
 
 func init() {
 	// Loading the configuration via viper
-	err := config.Load()
-	if err != nil {
+	if err := config.Load(); err != nil {
 		log.Fatal("config error:", err)
 	}
 
 	// Connecting to the database and loading the queries generated
 	// by sqlc.
-	err = persistence.Connect()
-	if err != nil {
+	if err := persistence.Connect(); err != nil {
 		log.Fatal("postgres error:", err)
 	}
 }
@@ -82,7 +80,12 @@ func main() {
 	r.Use(httprate.LimitAll(requestLimit, time.Duration(windowLength)))
 
 	r.Group(func(r chi.Router) {
-		r.Mount("/api/v1", v1.Router())
+		// Versioned API routes will be mounted to this group
+		r.Route("/api", func(r chi.Router) {
+			r.Mount("/v1", v1.Router())
+		})
+
+		// We may add more routes in this route group later.
 	})
 
 	// Getting the connection address from the configuration and

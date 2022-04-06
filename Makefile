@@ -2,9 +2,6 @@ patch:
 	@go fmt ./...
 	@go vet ./...
 
-test: patch
-	@go test -v ./...
-
 run:
 	@go run main.go
 
