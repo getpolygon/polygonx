@@ -4,3 +4,6 @@ select * from "posts" where "id" = $1;
 -- name: InsertPost :one
 insert into "posts" ("user", "title", "content")
 values ($1, $2, $3) returning *;
+
+-- name: DeletePostByID :exec
+delete from posts where id = $1;

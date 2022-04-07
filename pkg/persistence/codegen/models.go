@@ -5,30 +5,27 @@ package codegen
 import (
 	"database/sql"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Post struct {
-	ID        uuid.UUID      `json:"id"`
-	User      uuid.UUID      `json:"user"`
+	ID        string         `json:"id"`
+	User      string         `json:"user"`
 	Title     string         `json:"title"`
 	Content   sql.NullString `json:"content"`
+	Updated   bool           `json:"updated"`
 	UpdatedAt time.Time      `json:"updated_at"`
-	CreatedAt time.Time      `json:"created_at"`
 }
 
 type Upvote struct {
-	Post      uuid.UUID `json:"post"`
-	User      uuid.UUID `json:"user"`
+	Post      string    `json:"post"`
+	User      string    `json:"user"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Password  string    `json:"password"`
-	Username  string    `json:"username"`
-	CreatedAt time.Time `json:"created_at"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Username string `json:"username"`
 }

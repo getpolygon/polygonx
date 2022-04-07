@@ -5,8 +5,6 @@ package codegen
 
 import (
 	"context"
-
-	"github.com/google/uuid"
 )
 
 const deletePostUpvoteOfUser = `-- name: DeletePostUpvoteOfUser :exec
@@ -14,8 +12,8 @@ delete from upvotes where ("user", "post") = ($1, $2)
 `
 
 type DeletePostUpvoteOfUserParams struct {
-	User   uuid.UUID `json:"user"`
-	User_2 uuid.UUID `json:"user_2"`
+	User   string `json:"user"`
+	User_2 string `json:"user_2"`
 }
 
 func (q *Queries) DeletePostUpvoteOfUser(ctx context.Context, arg DeletePostUpvoteOfUserParams) error {
@@ -29,8 +27,8 @@ values ($1, $2) returning post, "user", created_at
 `
 
 type InsertPostUpvoteByUserParams struct {
-	User uuid.UUID `json:"user"`
-	Post uuid.UUID `json:"post"`
+	User string `json:"user"`
+	Post string `json:"post"`
 }
 
 func (q *Queries) InsertPostUpvoteByUser(ctx context.Context, arg InsertPostUpvoteByUserParams) (Upvote, error) {

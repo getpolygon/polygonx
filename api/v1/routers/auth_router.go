@@ -30,9 +30,17 @@
 package routers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
+	"github.com/jackc/pgerrcode"
+	"github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
+	"polygon.am/core/api/v1/common"
+	"polygon.am/core/pkg/persistence"
+	"polygon.am/core/pkg/persistence/codegen"
 )
 
 func AuthRouter() *chi.Mux {
@@ -66,7 +74,58 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 // the `polygon.security.accounts.forceEmailVerification` option
 // in the config is either unspecified or is of value `false`.
 func SignUp(w http.ResponseWriter, r *http.Request) {
+	body := common.SignUpRequestBody{}
+	// Validating request form fields and sending an error if
+	// the validation fails.
+	if err := body.Validate(w, r); err != nil {
+		// A response will be automatically returned by the
+		// `.Validate` method.
+		return
+	}
 
+	// Creating password hash from the original password and storing only
+	// the encrypted one in the database.
+	password, err := bcrypt.GenerateFromPassword([]byte(r.Form.Get("password")), bcrypt.DefaultCost)
+	if err != nil {
+		render.Status(r, http.StatusInternalServerError)
+		render.JSON(w, r, "password hashing error")
+		return
+	}
+
+	// Persisting user's records in the database
+	user, err := persistence.Queries.InsertUser(context.Background(), codegen.InsertUserParams{
+		Name:     body.Name,
+		Email:    body.Email,
+		Username: body.Username,
+		Password: string(password),
+	})
+
+	// Converting the error to pq Error and validating the code from
+	// the PostgreSQL query via a helper library.
+	if err != nil {
+		if err := err.(*pq.Error); err != nil {
+			switch err.Code {
+			case pgerrcode.UniqueViolation:
+				{
+					render.Status(r, http.StatusForbidden)
+					render.JSON(w, r, "user exists")
+					return
+				}
+			default:
+				{
+					render.Status(r, http.StatusInternalServerError)
+					render.JSON(w, r, "unknown error")
+					return
+				}
+			}
+		}
+	}
+
+	// TODO: add token handling logic
+
+	render.Status(r, http.StatusCreated)
+	render.JSON(w, r, user)
+	return
 }
 
 // This route is used for deleting user accounts. The process is
