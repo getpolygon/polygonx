@@ -1,6 +1,6 @@
 -- Write your migrate up statements here
 CREATE TABLE "posts" (
-    "id"            CHAR(27)        NOT NULL PRIMARY KEY DEFAULT generate_ulid(),
+    "id"            CHAR(27)        UNIQUE NOT NULL PRIMARY KEY DEFAULT generate_ulid(),
     "user"          CHAR(27)        NOT NULL REFERENCES users("id"),
     "title"         VARCHAR(120)    NOT NULL,
     "content"       TEXT                NULL,

@@ -26,7 +26,7 @@ func (q *Queries) DeleteUserByUsername(ctx context.Context, username string) err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-select id, name, email, password, username from "users" where "email" = $1 LIMIT 1
+select id, name, email, password, username, created_at from "users" where "email" = $1 LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -38,12 +38,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Email,
 		&i.Password,
 		&i.Username,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-select id, name, email, password, username from "users" where "username" = $1 limit 1
+select id, name, email, password, username, created_at from "users" where "username" = $1 limit 1
 `
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
@@ -55,13 +56,14 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.Email,
 		&i.Password,
 		&i.Username,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const insertUser = `-- name: InsertUser :one
 insert into "users" ("name", "username", "email", "password") 
-values ($1, $2, $3, $4) returning id, name, email, password, username
+values ($1, $2, $3, $4) returning id, name, email, password, username, created_at
 `
 
 type InsertUserParams struct {
@@ -85,6 +87,7 @@ func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, e
 		&i.Email,
 		&i.Password,
 		&i.Username,
+		&i.CreatedAt,
 	)
 	return i, err
 }
