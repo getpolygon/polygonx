@@ -30,7 +30,8 @@
 package routers
 
 import (
-	"context"
+	"database/sql"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -38,10 +39,31 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
-	"polygon.am/core/api/v1/common"
+	"polygon.am/core/api/v1/middleware/auth"
+	"polygon.am/core/api/v1/middleware/validation"
 	"polygon.am/core/pkg/persistence"
 	"polygon.am/core/pkg/persistence/codegen"
 )
+
+// This struct contains the standard request body with its validations
+// for the sign up endpoint.
+type SignUpRequestBody struct {
+	// An email address can contain at most 254 characters
+	// more info: https://stackoverflow.com/questions/386294/what-is-the-maximum-length-of-a-valid-email-address#:~:text=%22There%20is%20a%20length%20limit,total%20length%20of%20320%20characters.
+	Email    string `json:"email" validate:"required,email,max=254"`
+	Name     string `json:"name" validate:"required"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required,min=8,alphanum"`
+}
+
+// This struct contains the standard request body with its validations
+// for the sign in endpoint.
+type SignInRequestBody struct {
+	// An email address can contain at most 254 characters
+	// more info: https://stackoverflow.com/questions/386294/what-is-the-maximum-length-of-a-valid-email-address#:~:text=%22There%20is%20a%20length%20limit,total%20length%20of%20320%20characters.
+	Email    string `json:"email" validate:"required,email,max=254"`
+	Password string `json:"password" validate:"required,min=8"`
+}
 
 func AuthRouter() *chi.Mux {
 	r := chi.NewRouter()
@@ -66,7 +88,58 @@ func SignUpConfirmation(w http.ResponseWriter, r *http.Request) {
 // consume the API via the provided jwt token send in the
 // JSON response.
 func SignIn(w http.ResponseWriter, r *http.Request) {
+	body := new(SignInRequestBody)
+	if err := validation.ValidateRequest(r, body); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, err)
+		return
+	}
 
+	user, err := persistence.Queries.GetFullUserByEmail(r.Context(), body.Email)
+	if err != nil {
+		if errors.As(err, &pq.Error{}) {
+			switch err := err.(*pq.Error); err.Code {
+			case pgerrcode.NoData, pgerrcode.NoDataFound:
+				{
+					render.Status(r, http.StatusNotFound)
+					render.JSON(w, r, "user not found")
+					return
+				}
+			default:
+				{
+					render.Status(r, http.StatusInternalServerError)
+					render.JSON(w, r, err)
+					return
+				}
+			}
+		} else if err == sql.ErrNoRows {
+			render.Status(r, http.StatusNotFound)
+			render.JSON(w, r, "user not found")
+			return
+		}
+
+		render.Status(r, http.StatusNotImplemented)
+		render.JSON(w, r, "unknown error")
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
+	if err != nil {
+		render.Status(r, http.StatusForbidden)
+		render.JSON(w, r, "invalid password")
+		return
+	}
+
+	token, err := auth.GenTokenWithUserID(user.ID)
+	if err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, token)
+	return
 }
 
 // This route is used for creating an account for the users. It
@@ -74,12 +147,12 @@ func SignIn(w http.ResponseWriter, r *http.Request) {
 // the `polygon.security.accounts.forceEmailVerification` option
 // in the config is either unspecified or is of value `false`.
 func SignUp(w http.ResponseWriter, r *http.Request) {
-	body := common.SignUpRequestBody{}
+	body := new(SignUpRequestBody)
 	// Validating request form fields and sending an error if
 	// the validation fails.
-	if err := body.Validate(w, r); err != nil {
-		// A response will be automatically returned by the
-		// `.Validate` method.
+	if err := validation.ValidateRequest(r, body); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, err)
 		return
 	}
 
@@ -93,7 +166,7 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Persisting user's records in the database
-	user, err := persistence.Queries.InsertUser(context.Background(), codegen.InsertUserParams{
+	user, err := persistence.Queries.InsertUser(r.Context(), codegen.InsertUserParams{
 		Name:     body.Name,
 		Email:    body.Email,
 		Username: body.Username,
@@ -103,28 +176,31 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 	// Converting the error to pq Error and validating the code from
 	// the PostgreSQL query via a helper library.
 	if err != nil {
-		if err := err.(*pq.Error); err != nil {
-			switch err.Code {
-			case pgerrcode.UniqueViolation:
-				{
-					render.Status(r, http.StatusForbidden)
-					render.JSON(w, r, "user exists")
-					return
-				}
-			default:
-				{
-					render.Status(r, http.StatusInternalServerError)
-					render.JSON(w, r, "unknown error")
-					return
-				}
+		switch err := err.(*pq.Error); err.Code {
+		case pgerrcode.UniqueViolation:
+			{
+				render.Status(r, http.StatusForbidden)
+				render.JSON(w, r, "user "+user.Username+" already exists")
+				return
+			}
+		default:
+			{
+				render.Status(r, http.StatusInternalServerError)
+				render.JSON(w, r, "unknown error")
+				return
 			}
 		}
 	}
 
-	// TODO: add token handling logic
+	token, err := auth.GenTokenWithUserID(user.ID)
+	if err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, err)
+		return
+	}
 
 	render.Status(r, http.StatusCreated)
-	render.JSON(w, r, user)
+	render.JSON(w, r, token)
 	return
 }
 

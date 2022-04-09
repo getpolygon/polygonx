@@ -5,32 +5,28 @@ package codegen
 
 import (
 	"context"
+	"time"
 )
 
-const deleteUserByEmail = `-- name: DeleteUserByEmail :exec
-delete from "users" where "email" = $1
+const checkUserExistsByID = `-- name: CheckUserExistsByID :one
+select 1::boolean from "users" where "id" = $1 LIMIT 1
 `
 
-func (q *Queries) DeleteUserByEmail(ctx context.Context, email string) error {
-	_, err := q.db.ExecContext(ctx, deleteUserByEmail, email)
-	return err
+func (q *Queries) CheckUserExistsByID(ctx context.Context, id string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkUserExistsByID, id)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
-const deleteUserByUsername = `-- name: DeleteUserByUsername :exec
-delete from "users" where "username" = $1
-`
-
-func (q *Queries) DeleteUserByUsername(ctx context.Context, username string) error {
-	_, err := q.db.ExecContext(ctx, deleteUserByUsername, username)
-	return err
-}
-
-const getUserByEmail = `-- name: GetUserByEmail :one
+const getFullUserByEmail = `-- name: GetFullUserByEmail :one
 select id, name, email, password, username, created_at from "users" where "email" = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+// This query should only be used for retrieving private
+// user information.
+func (q *Queries) GetFullUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getFullUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -43,18 +39,59 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	return i, err
 }
 
-const getUserByUsername = `-- name: GetUserByUsername :one
-select id, name, email, password, username, created_at from "users" where "username" = $1 limit 1
+const getPartialUserByUsername = `-- name: GetPartialUserByUsername :one
+
+
+
+
+
+
+select
+    "id",
+    "name",
+    "username",
+    "created_at"
+from "users" where "username" = $1 limit 1
 `
 
-func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByUsername, username)
-	var i User
+type GetPartialUserByUsernameRow struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// BSD 3-Clause License
+// Copyright (c) 2021, Michael Grigoryan
+// All rights reserved.
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This query should only be used when retrieving public
+// user information.
+func (q *Queries) GetPartialUserByUsername(ctx context.Context, username string) (GetPartialUserByUsernameRow, error) {
+	row := q.db.QueryRowContext(ctx, getPartialUserByUsername, username)
+	var i GetPartialUserByUsernameRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
-		&i.Email,
-		&i.Password,
 		&i.Username,
 		&i.CreatedAt,
 	)
@@ -62,30 +99,48 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 }
 
 const insertUser = `-- name: InsertUser :one
-insert into "users" ("name", "username", "email", "password") 
-values ($1, $2, $3, $4) returning id, name, email, password, username, created_at
+insert into "users" (
+    "name", 
+    "email", 
+    "username", 
+    "password"
+) values ($1, $2, $3, $4) returning 
+    "id", 
+    "name",
+    "email", 
+    "username",
+    "created_at"
 `
 
 type InsertUserParams struct {
 	Name     string `json:"name"`
-	Username string `json:"username"`
 	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (User, error) {
+type InsertUserRow struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// This query is only used whenever a new user is created
+// and must not be used anywhere else.
+func (q *Queries) InsertUser(ctx context.Context, arg InsertUserParams) (InsertUserRow, error) {
 	row := q.db.QueryRowContext(ctx, insertUser,
 		arg.Name,
-		arg.Username,
 		arg.Email,
+		arg.Username,
 		arg.Password,
 	)
-	var i User
+	var i InsertUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Email,
-		&i.Password,
 		&i.Username,
 		&i.CreatedAt,
 	)

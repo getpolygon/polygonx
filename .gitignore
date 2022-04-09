@@ -41,4 +41,5 @@ go.work
 # Configuration files
 *env*
 conf.y*ml
+tern.conf
 .conf.y*ml

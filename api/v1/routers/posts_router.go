@@ -30,18 +30,79 @@
 package routers
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/render"
+	"polygon.am/core/api/v1/middleware/auth"
+	"polygon.am/core/api/v1/middleware/validation"
+	"polygon.am/core/pkg/persistence"
+	"polygon.am/core/pkg/persistence/codegen"
 )
 
 func PostsRouter() *chi.Mux {
 	r := chi.NewRouter()
+
 	r.Get("/{id}", GetPostByID)
+	r.Post("/create", CreatePost)
 	r.Delete("/{id}", DeletePostByID)
 	r.Patch("/modify/{id}", ModifyPostByID)
+	r.Get("/of/{username}", GetPostsOfUserByUsername)
 
 	return r
+}
+
+type CreatePostRequestBody struct {
+	Content string `json:"content"`
+	Title   string `json:"title" validate:"max=80"`
+}
+
+// This endpoint is used for creating posts.
+func CreatePost(w http.ResponseWriter, r *http.Request) {
+	body := new(CreatePostRequestBody)
+	if err := validation.ValidateRequest(r, body); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, "bad payload")
+		return
+	}
+
+	user, err := auth.GetUserIDFromRequest(r)
+	if err != nil {
+		render.Status(r, http.StatusForbidden)
+		render.JSON(w, r, "jwt error")
+		return
+	}
+
+	post, err := persistence.Queries.InsertPost(r.Context(), codegen.InsertPostParams{
+		User:    user,
+		Title:   body.Title,
+		Content: sql.NullString{String: body.Content, Valid: body.Content != ""},
+	})
+
+	render.Status(r, http.StatusCreated)
+	render.JSON(w, r, post)
+	return
+}
+
+// This route is used for returning posts created by a certain
+// user by specifying their username.
+func GetPostsOfUserByUsername(w http.ResponseWriter, r *http.Request) {
+	username, cursor := chi.URLParam(r, "username"), string(r.URL.Query().Get("cursor"))
+	posts, err := persistence.Queries.GetPostsOfUserAfterID(r.Context(), codegen.GetPostsOfUserAfterIDParams{
+		ID:       cursor,
+		Username: username,
+	})
+
+	if err != nil {
+		render.Status(r, http.StatusNotImplemented)
+		render.JSON(w, r, "unknown error")
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, posts)
+	return
 }
 
 // This route is used for fetching post information with the

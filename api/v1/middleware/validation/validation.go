@@ -27,31 +27,44 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package v1
+package validation
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/jwtauth"
-	"polygon.am/core/api/v1/middleware/auth"
-	"polygon.am/core/api/v1/routers"
+	"net/http"
+
+	"github.com/go-playground/validator"
+	"github.com/gorilla/schema"
+	"github.com/hashicorp/go-multierror"
 )
 
-// This function will return all routes that are necessary
-// for working with the version 1 API of Polygon.
-func Router() *chi.Mux {
-	r := chi.NewRouter()
+var decoder *schema.Decoder = schema.NewDecoder()
+var validate *validator.Validate = validator.New()
 
-	// Mounting authentication routes before the the jwt authorization
-	// middleware to enable access to the auth routes without a token.
-	r.Mount("/auth", routers.AuthRouter())
+// This function will take care of parsing the HTTP form sent by the
+// request and optionally, will return an error if something fails.
+func handleParseForm(r *http.Request) error {
+	return r.ParseForm()
+}
 
-	r.Group(func(r chi.Router) {
-		r.Use(jwtauth.Verifier(auth.CreateVerifier()))
-		r.Use(auth.Authenticator)
+// This function will attempt to serialize contents of the parsed HTTP form
+// into our desired struct.
+func handleDecodeBody[T any](r *http.Request, dst *T) error {
+	return decoder.Decode(dst, r.PostForm)
+}
 
-		r.Mount("/users", routers.UsersRouter())
-		r.Mount("/posts", routers.PostsRouter())
-	})
+// This function will take care of validating the HTTP form by using
+// a predefined schema struct.
+func handleValidateBody[T any](r *http.Request, dst *T) error {
+	return validate.StructCtx(r.Context(), dst)
+}
 
-	return r
+// This function will take care of the whole process for parsing, decoding
+// and validating parts from the HTTP request.
+func ValidateRequest[T any](r *http.Request, dst *T) error {
+	// Initializing multierror and appending all errors to it repsectively
+	var err *multierror.Error
+	// Pushing errors from all internal operations to multierror
+	multierror.Append(err, handleParseForm(r), handleDecodeBody(r, dst), handleValidateBody(r, dst))
+	// Joining all errors and returning the result as one error
+	return err.Unwrap()
 }
