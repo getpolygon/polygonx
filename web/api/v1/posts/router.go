@@ -27,28 +27,17 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package main
+package posts
 
-import (
-	"log"
+import "github.com/go-chi/chi"
 
-	"github.com/getpolygon/corexp/internal/httpx"
-	"github.com/getpolygon/corexp/internal/postgres"
-	"github.com/getpolygon/corexp/internal/settings"
-	"github.com/getpolygon/corexp/web"
-)
+func Router() *chi.Mux {
+	r := chi.NewRouter()
+	r.Get("/{id}", GetPostByID)
+	r.Post("/create", CreatePost)
+	r.Delete("/{id}", DeletePostByID)
+	r.Patch("/modify/{id}", ModifyPostByID)
+	r.Get("/of/{username}", GetPostsOfUserByUsername)
 
-func main() {
-	settings, err := settings.New()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	postgres, err := postgres.New(settings)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	server := httpx.NewGracefulServer(settings.Address, web.New(postgres, settings))
-	server.StartWithGracefulShutdown()
+	return r
 }

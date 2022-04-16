@@ -27,28 +27,29 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package main
+package auth
 
-import (
-	"log"
+import "net/http"
 
-	"github.com/getpolygon/corexp/internal/httpx"
-	"github.com/getpolygon/corexp/internal/postgres"
-	"github.com/getpolygon/corexp/internal/settings"
-	"github.com/getpolygon/corexp/web"
-)
+// This route is used for confirming user registration. It is only
+// enabled if `polygon.security.accounts.forceEmailVerification` is
+// forced from the configuration, and the required options in the
+// config have valid values.
+func SignUpConfirmation(w http.ResponseWriter, r *http.Request) {
 
-func main() {
-	settings, err := settings.New()
-	if err != nil {
-		log.Fatal(err)
-	}
+}
 
-	postgres, err := postgres.New(settings)
-	if err != nil {
-		log.Fatal(err)
-	}
+// The sign in route is where the users will be able to and
+// consume the API via the provided jwt token send in the
+// JSON response.
+func SignIn(w http.ResponseWriter, r *http.Request) {
 
-	server := httpx.NewGracefulServer(settings.Address, web.New(postgres, settings))
-	server.StartWithGracefulShutdown()
+}
+
+// This route is used for creating an account for the users. It
+// executes instantly, without any need for email validation if
+// the `polygon.security.accounts.forceEmailVerification` option
+// in the config is either unspecified or is of value `false`.
+func SignUp(w http.ResponseWriter, r *http.Request) {
+
 }

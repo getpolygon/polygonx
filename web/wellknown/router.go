@@ -27,28 +27,19 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package main
+package wellknown
 
 import (
-	"log"
-
-	"github.com/getpolygon/corexp/internal/httpx"
-	"github.com/getpolygon/corexp/internal/postgres"
+	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
 	"github.com/getpolygon/corexp/internal/settings"
-	"github.com/getpolygon/corexp/web"
+	"github.com/go-chi/chi/v5"
 )
 
-func main() {
-	settings, err := settings.New()
-	if err != nil {
-		log.Fatal(err)
-	}
+// This router exposes the routes which contain publicly available
+// information about current Polygon instance, etc.
+func Router(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
+	r := chi.NewRouter()
+	r.Get("/nodeinfo", NodeInformation(p, s))
 
-	postgres, err := postgres.New(settings)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	server := httpx.NewGracefulServer(settings.Address, web.New(postgres, settings))
-	server.StartWithGracefulShutdown()
+	return r
 }

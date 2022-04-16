@@ -9,6 +9,9 @@ tooling:
 	@go install github.com/jackc/tern@latest
 	@go install github.com/kyleconroy/sqlc/cmd/sqlc@latest
 
+clean:
+	rm -rf ./bin/
+
 build: patch
 	@GOOS=linux GOARCH=amd64 go build -o bin/core-linux-amd64 main.go
 	@GOOS=linux GOARCH=arm64 go build -o bin/core-linux-arm64 main.go

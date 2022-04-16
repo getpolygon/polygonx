@@ -27,28 +27,30 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package main
+package users
 
 import (
-	"log"
-
-	"github.com/getpolygon/corexp/internal/httpx"
-	"github.com/getpolygon/corexp/internal/postgres"
-	"github.com/getpolygon/corexp/internal/settings"
-	"github.com/getpolygon/corexp/web"
+	"net/http"
 )
 
-func main() {
-	settings, err := settings.New()
-	if err != nil {
-		log.Fatal(err)
-	}
+// This route is used for fetching users' public information
+// by using their public username. As `GetUserByID` endpoint,
+// this endpoint also will not return any private information
+// that is associated with the user.
+func GetUserByUsername(w http.ResponseWriter, r *http.Request) {
 
-	postgres, err := postgres.New(settings)
-	if err != nil {
-		log.Fatal(err)
-	}
+}
 
-	server := httpx.NewGracefulServer(settings.Address, web.New(postgres, settings))
-	server.StartWithGracefulShutdown()
+// This route is used for fetching public user information by
+// their public ID. This endpoint will not return any private
+// data points, such as user creation date, email, password,
+// configuration, etc.
+func GetUserByID(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// This route is used for updating user's information by the ID
+// provided from their authentication token.
+func UpdateUserByID(w http.ResponseWriter, r *http.Request) {
+
 }

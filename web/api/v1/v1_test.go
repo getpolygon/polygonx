@@ -27,28 +27,61 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package main
+package v1_test
 
 import (
-	"log"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-	"github.com/getpolygon/corexp/internal/httpx"
-	"github.com/getpolygon/corexp/internal/postgres"
-	"github.com/getpolygon/corexp/internal/settings"
-	"github.com/getpolygon/corexp/web"
+	v1 "github.com/getpolygon/corexp/web/api/v1"
+	"github.com/go-chi/chi/v5"
 )
 
-func main() {
-	settings, err := settings.New()
-	if err != nil {
-		log.Fatal(err)
+func executeRequest(req *http.Request, router *chi.Mux) *httptest.ResponseRecorder {
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	return rr
+}
+
+func checkResponseCode(t *testing.T, expected, actual int) {
+	if expected != actual {
+		t.Errorf("Expected response code: %d. Got %d\n", expected, actual)
+	}
+}
+
+func TestV1StatusCodes(t *testing.T) {
+	r := v1.Router()
+	tests := []struct {
+		Expected int
+		Path     string
+		Method   string
+	}{
+		{
+			Method:   http.MethodGet,
+			Path:     "/users/example",
+			Expected: http.StatusUnauthorized,
+		},
+		{
+			Method:   http.MethodGet,
+			Path:     "/posts/12345678",
+			Expected: http.StatusUnauthorized,
+		},
+		{
+			Method:   http.MethodGet,
+			Path:     "/auth/signin",
+			Expected: http.StatusMethodNotAllowed,
+		},
+		{
+			Method:   http.MethodGet,
+			Path:     "/auth/signup",
+			Expected: http.StatusMethodNotAllowed,
+		},
 	}
 
-	postgres, err := postgres.New(settings)
-	if err != nil {
-		log.Fatal(err)
+	for _, tt := range tests {
+		req, _ := http.NewRequest(tt.Method, tt.Path, nil)
+		res := executeRequest(req, r)
+		checkResponseCode(t, tt.Expected, res.Code)
 	}
-
-	server := httpx.NewGracefulServer(settings.Address, web.New(postgres, settings))
-	server.StartWithGracefulShutdown()
 }

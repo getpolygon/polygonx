@@ -27,28 +27,31 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package main
+package v1
 
 import (
-	"log"
-
-	"github.com/getpolygon/corexp/internal/httpx"
-	"github.com/getpolygon/corexp/internal/postgres"
-	"github.com/getpolygon/corexp/internal/settings"
-	"github.com/getpolygon/corexp/web"
+	"github.com/getpolygon/corexp/web/api/v1/auth"
+	"github.com/getpolygon/corexp/web/api/v1/posts"
+	"github.com/getpolygon/corexp/web/api/v1/users"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/jwtauth"
 )
 
-func main() {
-	settings, err := settings.New()
-	if err != nil {
-		log.Fatal(err)
-	}
+func Router() *chi.Mux {
+	r := chi.NewRouter()
 
-	postgres, err := postgres.New(settings)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Mounting authentication routes before the the jwt authorization
+	// middleware to enable access to the auth routes without a token.
+	r.Mount("/auth", auth.Router())
 
-	server := httpx.NewGracefulServer(settings.Address, web.New(postgres, settings))
-	server.StartWithGracefulShutdown()
+	r.Group(func(r chi.Router) {
+		// TODO: Add dependency injection with Fx for handling
+		// using a custom validator with the `jwtauth` package.
+		r.Use(jwtauth.Authenticator)
+
+		r.Mount("/users", users.Router())
+		r.Mount("/posts", posts.Router())
+	})
+
+	return r
 }

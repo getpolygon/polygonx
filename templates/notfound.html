@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <title>Polygon Core</title>
+    <meta
+      name="description"
+      content="This website is hosting an experimental core instance Polygon Open-Source Project."
+    />
+  </head>
+  <body class="bg-gray-800">
+    <div class="container mx-auto px-6 py-8">
+      <h1 class="align-middle text-purple-500 font-bold text-3xl">Polygon.</h1>
+      <p class="align-middle font-medium text-gray-200">
+        This website is hosting an experimental
+        <a
+          target="_blank"
+          rel="noreferrer noopener"
+          class="text-purple-400 hover:underline"
+          href="https://github.com/getpolygon/corexp"
+          >core instance</a
+        >
+        of
+        <a
+          target="_blank"
+          rel="noreferrer noopener"
+          href="https://github.com/getpolygon"
+          class="text-purple-400 hover:underline"
+          >Polygon Open-Source Project.</a
+        >
+      </p>
+
+      <div
+        id="info"
+        class="hidden mt-4 max-w-xl p-4 border-2 border-gray-600 shadow rounded-lg"
+      >
+        <div class="space-y-1">
+          <section>
+            <span class="text-gray-200"
+              >Core Version: <span id="software-version"></span>
+              <!-- Will be fetched by JS -->
+            </span>
+          </section>
+
+          <section>
+            <span class="text-gray-200">
+              Open Usage Statistics:
+              <span id="usage-statistics">
+                <!-- Will be fetched by JS -->
+              </span>
+            </span>
+          </section>
+
+          <section>
+            <span class="text-gray-200">
+              Registrations Allowed:
+              <span id="registration-access">
+                <!-- Will be fetched by JS -->
+              </span>
+            </span>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      window.onload = async () => {
+        {
+          const request = await fetch("/.well-known/nodeinfo");
+          const response = await request.json();
+
+          document.getElementById("info").classList.remove("hidden");
+          document.getElementById("software-version").innerText =
+            response.software.version;
+
+          document.getElementById("registration-access").innerText =
+            response.openRegistrations === true ? "Yes" : "No";
+
+          document.getElementById("usage-statistics").innerText = !response
+            .metadata.usage.private
+            ? "No"
+            : "Yes";
+        }
+      };
+    </script>
+  </body>
+</html>

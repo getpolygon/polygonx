@@ -27,28 +27,37 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package main
+package posts
 
-import (
-	"log"
+import "net/http"
 
-	"github.com/getpolygon/corexp/internal/httpx"
-	"github.com/getpolygon/corexp/internal/postgres"
-	"github.com/getpolygon/corexp/internal/settings"
-	"github.com/getpolygon/corexp/web"
-)
+// This endpoint is used for creating posts.
+func CreatePost(w http.ResponseWriter, r *http.Request) {
 
-func main() {
-	settings, err := settings.New()
-	if err != nil {
-		log.Fatal(err)
-	}
+}
 
-	postgres, err := postgres.New(settings)
-	if err != nil {
-		log.Fatal(err)
-	}
+// This route is used for returning posts created by a certain
+// user by specifying their username.
+func GetPostsOfUserByUsername(w http.ResponseWriter, r *http.Request) {
 
-	server := httpx.NewGracefulServer(settings.Address, web.New(postgres, settings))
-	server.StartWithGracefulShutdown()
+}
+
+// This route is used for fetching post information with the
+// ID provided from URL parameters.
+func GetPostByID(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// This route is used for modifying post information with the
+// ID provided from URL parameters.
+func ModifyPostByID(w http.ResponseWriter, r *http.Request) {
+
+}
+
+// This route is used for deleting all information related to
+// a specific post found by its ID. This will remove the post
+// information itself, the comments, the upvotes and everything
+// else related to it.
+func DeletePostByID(w http.ResponseWriter, r *http.Request) {
+
 }
