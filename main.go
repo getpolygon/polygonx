@@ -40,15 +40,12 @@ import (
 
 func main() {
 	settings, err := settings.New()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	postgres, err := postgres.New(settings)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	server := httpx.NewGracefulServer(settings.Address, web.New(postgres, settings))
+	web := web.New(postgres, settings)
+	server := httpx.NewGracefulServer(settings.Address, web)
 	server.StartWithGracefulShutdown()
 }

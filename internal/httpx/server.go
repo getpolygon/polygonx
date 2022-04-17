@@ -33,6 +33,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/ory/graceful"
 )
 
@@ -40,13 +41,17 @@ type GracefulServer struct {
 	*http.Server
 }
 
-func NewGracefulServer(addr string, handler http.Handler) GracefulServer {
+// This function will create a new server with the provided binding
+// address and chi handler, which will support graceful shutdowns
+// with a custom starting method.
+func NewGracefulServer(a string, h *chi.Mux) GracefulServer {
 	return GracefulServer{&http.Server{
-		Addr:    addr,
-		Handler: handler,
+		Addr:    a,
+		Handler: h,
 	}}
 }
 
+// Start the server, with support for graceful shutdowns.
 func (s *GracefulServer) StartWithGracefulShutdown() {
 	if err := graceful.Graceful(s.ListenAndServe, s.Shutdown); err != nil {
 		log.Fatal(err)

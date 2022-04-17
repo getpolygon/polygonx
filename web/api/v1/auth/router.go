@@ -29,13 +29,16 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package auth
 
-import "github.com/go-chi/chi"
+import (
+	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
+	"github.com/go-chi/chi/v5"
+)
 
-func Router() *chi.Mux {
+func Router(p *postgres_codegen.Queries) *chi.Mux {
 	r := chi.NewRouter()
-	r.Post("/signin", SignIn)
-	r.Post("/signup", SignUp)
-	r.Post("/signup/confirmation", SignUpConfirmation)
+	r.Post("/signup", SignUp())
+	r.Post("/signin", SignIn(p))
+	r.Post("/signup/confirmation", SignUpConfirmation())
 
 	return r
 }

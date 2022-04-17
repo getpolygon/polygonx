@@ -38,19 +38,13 @@ import (
 	v1 "github.com/getpolygon/corexp/web/api/v1"
 	"github.com/getpolygon/corexp/web/notfound"
 	"github.com/getpolygon/corexp/web/wellknown"
-	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httprate"
 )
 
 func New(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
 	r := chi.NewRouter()
-
-	// Instead of defaulting to the catchall route provided by chi and
-	// net/http, we are redirecting the user to the page where we have
-	// created a custom HTML page, with some information about current
-	// instance.
-	r.NotFound(http.RedirectHandler("/notfound", http.StatusTemporaryRedirect).ServeHTTP)
 
 	r.Use(middleware.GetHead)
 	r.Use(middleware.NoCache)
@@ -68,22 +62,27 @@ func New(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
 		r.Use(middleware.Logger)
 	}
 
-	r.Group(func(r chi.Router) {
-		r.Route("/api", func(r chi.Router) {
-			r.Mount("/v1", v1.Router(p, s))
-		})
-
-		// `.well-known` routes will contain publicly accessible information
-		// current Polygon instance, and will be used for health checks, and
-		// version reporting, for usage with external tools and the ui.
-		// more info: https://en.wikipedia.org/wiki/Well-known_URI#:~:text=A%20well%2Dknown%20URI%20is,well%2Dknown%20locations%20across%20servers.
-		// 			  https://www.keycdn.com/support/well-known#:~:text=The%20well%2Dknown%20path%20prefix%20is%20essentially%20a%20place%20where,is%20defined%20as%20follows%3A%20%2F.
-		r.Mount("/.well-known", wellknown.Router(p, s))
-
-		// A custom not found route, where all the not found requests will
-		// be redirected to. This will return an HTML response.
-		r.Mount("/notfound", notfound.New())
+	r.Route("/api", func(r chi.Router) {
+		// Mounting version 1 API route to the main router.
+		r.Mount("/v1", v1.Router(p, s))
 	})
+
+	// `.well-known` routes will contain publicly accessible information
+	// current Polygon instance, and will be used for health checks, and
+	// version reporting, for usage with external tools and the ui.
+	// more info: https://en.wikipedia.org/wiki/Well-known_URI#:~:text=A%20well%2Dknown%20URI%20is,well%2Dknown%20locations%20across%20servers.
+	// 			  https://www.keycdn.com/support/well-known#:~:text=The%20well%2Dknown%20path%20prefix%20is%20essentially%20a%20place%20where,is%20defined%20as%20follows%3A%20%2F.
+	r.Mount("/.well-known", wellknown.Router(p, s))
+
+	// A custom not found route, where all the not found requests will
+	// be redirected to. This will return an HTML response.
+	r.Mount("/notfound", notfound.New())
+
+	// Instead of defaulting to the catchall route provided by chi and
+	// net/http, we are redirecting the user to the page where we have
+	// created a custom HTML page, with some information about current
+	// instance.
+	r.NotFound(http.RedirectHandler("/notfound", http.StatusTemporaryRedirect).ServeHTTP)
 
 	return r
 }

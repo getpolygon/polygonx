@@ -44,11 +44,13 @@ func Router(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
 
 	// Mounting authentication routes before the the jwt authorization
 	// middleware to enable access to the auth routes without a token.
-	r.Mount("/auth", auth.Router())
+	r.Mount("/auth", auth.Router(p))
 
+	// The rest of the routes will be protected and will need a JWT token
+	// for access.
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(auth.CreateAuthVerifier(s)))
-		r.Use(jwtauth.Authenticator)
+		r.Use(auth.Authenticator(p, s))
 
 		r.Mount("/users", users.Router())
 		r.Mount("/posts", posts.Router())

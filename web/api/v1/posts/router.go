@@ -29,7 +29,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package posts
 
-import "github.com/go-chi/chi"
+import "github.com/go-chi/chi/v5"
 
 func Router() *chi.Mux {
 	r := chi.NewRouter()
