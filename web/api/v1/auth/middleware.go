@@ -43,12 +43,10 @@ var verifier *jwtauth.JWTAuth
 
 // This function will create a JWT authentication verifier which will
 // be used by a middleware, provided by the `jwtauth` package.
-func CreateAuthVerifier(s *settings.Settings) func() *jwtauth.JWTAuth {
-	return func() *jwtauth.JWTAuth {
-		// https://community.auth0.com/t/jwt-signing-algorithms-rs256-vs-hs256/7720
-		verifier = jwtauth.New("HS256", []byte(s.Security.JWTSigningKey), nil)
-		return verifier
-	}
+func CreateAuthVerifier(s *settings.Settings) *jwtauth.JWTAuth {
+	// https://community.auth0.com/t/jwt-signing-algorithms-rs256-vs-hs256/7720
+	verifier = jwtauth.New("HS256", []byte(s.Security.JWTSigningKey), nil)
+	return verifier
 }
 
 func Authenticator(postgres *postgres_codegen.Queries, s *settings.Settings) func(next http.Handler) http.Handler {

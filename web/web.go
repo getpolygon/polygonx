@@ -62,9 +62,15 @@ func New(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
 	// We are using the `httplimit` package for limiting all requests to the API. The maximum number
 	// of consecutive requests is 100, and the threshold reset time is 1 minute.
 	r.Use(httprate.LimitAll(100, 1*time.Minute))
+
+	if *s.Logging == settings.LoggingEnvDevelopment || s.Logging == nil {
+		// Enabling HTTP logging only during development.
+		r.Use(middleware.Logger)
+	}
+
 	r.Group(func(r chi.Router) {
 		r.Route("/api", func(r chi.Router) {
-			r.Mount("/v1", v1.Router())
+			r.Mount("/v1", v1.Router(p, s))
 		})
 
 		// `.well-known` routes will contain publicly accessible information

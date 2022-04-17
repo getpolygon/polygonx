@@ -30,17 +30,11 @@
 package settings
 
 import (
-	"errors"
-	"flag"
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/getpolygon/hydra"
 )
 
-const FlagConfigPath string = "config-path"
-const FlagConfigFile string = "config-file"
 const DefaultConfigFilename string = ".conf.yaml"
 
 type LoggingEnv string
@@ -72,52 +66,16 @@ type Settings struct {
 	Postgres string           `yaml:"postgres" validate:"required,uri" env:"POLYGON_POSTGRES_URL"`
 }
 
-func getConfigFlags() (string, string, error) {
-	flag.Parse()
-
-	var path string
-	if f := flag.Lookup(FlagConfigPath); f != nil {
-		abs, err := filepath.Abs(f.Value.String())
-		if err != nil {
-			return "", "", err
-		}
-
-		path = abs
-	}
-
-	var filename string
-	if f := flag.Lookup(FlagConfigFile); f != nil {
-		joined := filepath.Join(path, f.Value.String())
-		if _, err := os.Stat(joined); err != nil && errors.Is(err, os.ErrNotExist) {
-			err := fmt.Sprintf("config file at %v does not exist.", joined)
-			return "", "", errors.New(err)
-		}
-
-		filename = f.Value.String()
-	}
-
-	return path, filename, nil
-}
-
 // This function will load the configuration from the specified config file
 // and environment variables, and will return a parsed settings struct.
 func New() (*Settings, error) {
-	// Getting optional flags from the runtime arguments. This
-	// function will return a custom configuration path and a
-	// custom filename. If nothing is supplied, will return
-	// empty strings.
-	p, f, err := getConfigFlags()
-	if err != nil {
-		return nil, err
-	}
-
 	var filename string
-	if f == "" {
-		// Defaulting to the pre-specified filename if nothing was provided
-		// via the flags.
+	if v := os.Getenv("POLYGON_CONFIG_FILE"); v == "" {
+		// Setting the filename to a pre-defined default, if the
+		// environment variable is empty.
 		filename = DefaultConfigFilename
 	} else {
-		filename = f
+		filename = v
 	}
 
 	// These are the default search paths where the configuration
@@ -128,10 +86,10 @@ func New() (*Settings, error) {
 		"/etc/getpolygon/corexp",
 	}
 
-	if p != "" {
-		// If a custom path IS specified via runtime flags, appending
-		// an additional item to search index.
-		paths = append(paths, p)
+	if v := os.Getenv("POLYGON_CONFIG_PATH"); v != "" {
+		// If a custom path IS specified via environment variables, append
+		// an additional path to search index.
+		paths = append(paths, v)
 	}
 
 	// Initializing a new Hydra instance, and loading the configuration

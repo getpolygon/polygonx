@@ -30,6 +30,8 @@
 package v1
 
 import (
+	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
+	"github.com/getpolygon/corexp/internal/settings"
 	"github.com/getpolygon/corexp/web/api/v1/auth"
 	"github.com/getpolygon/corexp/web/api/v1/posts"
 	"github.com/getpolygon/corexp/web/api/v1/users"
@@ -37,7 +39,7 @@ import (
 	"github.com/go-chi/jwtauth"
 )
 
-func Router() *chi.Mux {
+func Router(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Mounting authentication routes before the the jwt authorization
@@ -45,8 +47,7 @@ func Router() *chi.Mux {
 	r.Mount("/auth", auth.Router())
 
 	r.Group(func(r chi.Router) {
-		// TODO: Add dependency injection with Fx for handling
-		// using a custom validator with the `jwtauth` package.
+		r.Use(jwtauth.Verifier(auth.CreateAuthVerifier(s)))
 		r.Use(jwtauth.Authenticator)
 
 		r.Mount("/users", users.Router())
