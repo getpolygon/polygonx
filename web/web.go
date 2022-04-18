@@ -33,7 +33,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
+	"github.com/getpolygon/corexp/internal/deps"
 	"github.com/getpolygon/corexp/internal/settings"
 	v1 "github.com/getpolygon/corexp/web/api/v1"
 	"github.com/getpolygon/corexp/web/notfound"
@@ -43,7 +43,7 @@ import (
 	"github.com/go-chi/httprate"
 )
 
-func New(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
+func New(deps *deps.Dependencies) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Use(middleware.GetHead)
@@ -57,14 +57,16 @@ func New(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
 	// of consecutive requests is 100, and the threshold reset time is 1 minute.
 	r.Use(httprate.LimitAll(100, 1*time.Minute))
 
-	if *s.Logging == settings.LoggingEnvDevelopment || s.Logging == nil {
+	if *deps.Settings.Logging == settings.LoggingEnvDevelopment || deps.Settings.Logging == nil {
 		// Enabling HTTP logging only during development.
 		r.Use(middleware.Logger)
 	}
 
+	// Supporting multi-version API routes, for backwards-compatibility
+	// and for general accessibility in applications.
 	r.Route("/api", func(r chi.Router) {
 		// Mounting version 1 API route to the main router.
-		r.Mount("/v1", v1.Router(p, s))
+		r.Mount("/v1", v1.Router(deps))
 	})
 
 	// `.well-known` routes will contain publicly accessible information
@@ -72,7 +74,7 @@ func New(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
 	// version reporting, for usage with external tools and the ui.
 	// more info: https://en.wikipedia.org/wiki/Well-known_URI#:~:text=A%20well%2Dknown%20URI%20is,well%2Dknown%20locations%20across%20servers.
 	// 			  https://www.keycdn.com/support/well-known#:~:text=The%20well%2Dknown%20path%20prefix%20is%20essentially%20a%20place%20where,is%20defined%20as%20follows%3A%20%2F.
-	r.Mount("/.well-known", wellknown.Router(p, s))
+	r.Mount("/.well-known", wellknown.Router(deps))
 
 	// A custom not found route, where all the not found requests will
 	// be redirected to. This will return an HTML response.

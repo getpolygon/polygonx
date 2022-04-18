@@ -30,8 +30,7 @@
 package v1
 
 import (
-	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
-	"github.com/getpolygon/corexp/internal/settings"
+	"github.com/getpolygon/corexp/internal/deps"
 	"github.com/getpolygon/corexp/web/api/v1/auth"
 	"github.com/getpolygon/corexp/web/api/v1/posts"
 	"github.com/getpolygon/corexp/web/api/v1/users"
@@ -39,18 +38,18 @@ import (
 	"github.com/go-chi/jwtauth"
 )
 
-func Router(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
+func Router(deps *deps.Dependencies) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Mounting authentication routes before the the jwt authorization
 	// middleware to enable access to the auth routes without a token.
-	r.Mount("/auth", auth.Router(p))
+	r.Mount("/auth", auth.Router(deps))
 
 	// The rest of the routes will be protected and will need a JWT token
 	// for access.
 	r.Group(func(r chi.Router) {
-		r.Use(jwtauth.Verifier(auth.CreateAuthVerifier(s)))
-		r.Use(auth.Authenticator(p, s))
+		r.Use(jwtauth.Verifier(auth.CreateAuthVerifier(deps.Settings)))
+		r.Use(auth.Authenticator(deps))
 
 		r.Mount("/users", users.Router())
 		r.Mount("/posts", posts.Router())

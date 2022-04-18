@@ -32,20 +32,18 @@ package main
 import (
 	"log"
 
+	"github.com/getpolygon/corexp/internal/deps"
 	"github.com/getpolygon/corexp/internal/httpx"
-	"github.com/getpolygon/corexp/internal/postgres"
-	"github.com/getpolygon/corexp/internal/settings"
 	"github.com/getpolygon/corexp/web"
 )
 
 func main() {
-	settings, err := settings.New()
-	postgres, err := postgres.New(settings)
+	deps, err := deps.New()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	web := web.New(postgres, settings)
-	server := httpx.NewGracefulServer(settings.Address, web)
+	web, addr := web.New(deps), deps.Settings.Address
+	server := httpx.NewGracefulServer(addr, web)
 	server.StartWithGracefulShutdown()
 }

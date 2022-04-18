@@ -45,16 +45,16 @@ const (
 )
 
 type SMTPSettings struct {
-	User     string `yaml:"user" validate:"required" env:"POLYGON_SMTP_USER"`
-	Host     string `yaml:"host" validate:"required" env:"POLYGON_SMTP_HOST"`
-	Port     int16  `yaml:"port" validate:"required,number" env:"POLYGON_SMTP_PORT"`
 	Password string `yaml:"password" validate:"required" env:"POLYGON_SMTP_PASSWORD"`
+	Host     string `yaml:"host" validate:"required" validate:"uri" env:"POLYGON_SMTP_HOST"`
+	User     string `yaml:"user" validate:"required" validate:"uri" env:"POLYGON_SMTP_USER"`
+	Port     int16  `yaml:"port" validate:"required" validate:"number" env:"POLYGON_SMTP_PORT"`
 }
 
 type SecuritySettings struct {
 	OpenRegistrations   bool   `yaml:"open_registrations" env:"POLYGON_SECURITY_OPEN_REGISTRATIONS"`
 	ReportInstanceStats bool   `yaml:"report_instance_stats" env:"POLYGON_SECURITY_REPORT_INSTANCE_STATS"`
-	JWTSigningKey       string `yaml:"jwt_signing_key" validate:"required,alphanum,min=64" env:"POLYGON_SECURITY_JWT_SIGNING_KEY"`
+	JWTSigningKey       string `yaml:"jwt_signing_key" validate:"required" validate:"alphanum" validate:"min=64" env:"POLYGON_SECURITY_JWT_SIGNING_KEY"`
 }
 
 type Settings struct {
@@ -62,8 +62,8 @@ type Settings struct {
 	Security SecuritySettings `yaml:"security" validate:"required"`
 	Logging  *LoggingEnv      `yaml:"logging" env:"POLYGON_LOGGING"`
 	Address  string           `yaml:"address" env:"POLYGON_BIND_ADDRESS"`
-	Redis    string           `yaml:"redis" validate:"required,uri" env:"POLYGON_REDIS_URL"`
-	Postgres string           `yaml:"postgres" validate:"required,uri" env:"POLYGON_POSTGRES_URL"`
+	Redis    string           `yaml:"redis" validate:"required" validate:"uri" env:"POLYGON_REDIS_URL"`
+	Postgres string           `yaml:"postgres" validate:"required" validate:"uri" env:"POLYGON_POSTGRES_URL"`
 }
 
 // This function will load the configuration from the specified config file

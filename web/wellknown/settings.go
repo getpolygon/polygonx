@@ -32,6 +32,7 @@ package wellknown
 import (
 	"net/http"
 
+	"github.com/getpolygon/corexp/internal/deps"
 	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
 	"github.com/getpolygon/corexp/internal/settings"
 	"github.com/getpolygon/corexp/internal/types"
@@ -58,17 +59,17 @@ const NodeInfoSoftwareRepository string = "https://github.com/getpolygon"
 // including instance configuration, total users, comments and posts count etc. By default
 // fetching instance usage, including users, posts and comment count without personal info
 // is disabled and has to be specified manually in the configuration by the user.
-func NodeInformation(p *postgres_codegen.Queries, s *settings.Settings) http.HandlerFunc {
+func NodeInformation(deps *deps.Dependencies) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var stats postgres_codegen.GetFullUsageStatsRow
 
 		// Only fetching instance's statistics with user's consent. Usage
 		// statistics will mostly be blank, and will contain `0`s because
 		// of this.
-		if s.Security.ReportInstanceStats {
+		if deps.Settings.Security.ReportInstanceStats {
 			var err error
 
-			stats, err = p.GetFullUsageStats(r.Context())
+			stats, err = deps.Postgres.GetFullUsageStats(r.Context())
 			if err != nil {
 				render.Status(r, http.StatusInternalServerError)
 				render.JSON(w, r, err)
@@ -78,7 +79,7 @@ func NodeInformation(p *postgres_codegen.Queries, s *settings.Settings) http.Han
 
 		nodeinfo := types.NodeInfo{
 			Version:           NodeInfoVersion,
-			OpenRegistrations: s.Security.OpenRegistrations,
+			OpenRegistrations: deps.Settings.Security.OpenRegistrations,
 
 			Usage: types.NodeInfoUsage{
 				LocalPosts:    stats.PostsCount,
@@ -97,7 +98,7 @@ func NodeInformation(p *postgres_codegen.Queries, s *settings.Settings) http.Han
 				Repository: NodeInfoSoftwareRepository,
 			},
 
-			Metadata:  genMetadata(s),
+			Metadata:  genMetadata(deps.Settings),
 			Services:  make([]types.NodeInfoService, 0),
 			Protocols: make([]types.NodeInfoProtocol, 0),
 		}

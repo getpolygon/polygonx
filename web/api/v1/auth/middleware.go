@@ -33,7 +33,7 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
+	"github.com/getpolygon/corexp/internal/deps"
 	"github.com/getpolygon/corexp/internal/settings"
 	"github.com/go-chi/jwtauth"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -49,7 +49,7 @@ func CreateAuthVerifier(s *settings.Settings) *jwtauth.JWTAuth {
 	return verifier
 }
 
-func Authenticator(postgres *postgres_codegen.Queries, s *settings.Settings) func(next http.Handler) http.Handler {
+func Authenticator(deps *deps.Dependencies) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// The source of the following code was provided by github.com/go-chi/jwtauth
@@ -94,7 +94,7 @@ func Authenticator(postgres *postgres_codegen.Queries, s *settings.Settings) fun
 			}
 
 			// Checking whether the user exists
-			exists, err := postgres.CheckUserExistsByID(r.Context(), sub.(string))
+			exists, err := deps.Postgres.CheckUserExistsByID(r.Context(), sub.(string))
 			if err != nil {
 				// If there are no rows returned by PostgreSQL -> User does not exist -> 401.
 				if err == sql.ErrNoRows {

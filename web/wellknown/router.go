@@ -30,16 +30,15 @@
 package wellknown
 
 import (
-	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
-	"github.com/getpolygon/corexp/internal/settings"
+	"github.com/getpolygon/corexp/internal/deps"
 	"github.com/go-chi/chi/v5"
 )
 
 // This router exposes the routes which contain publicly available
 // information about current Polygon instance, etc.
-func Router(p *postgres_codegen.Queries, s *settings.Settings) *chi.Mux {
+func Router(deps *deps.Dependencies) *chi.Mux {
 	r := chi.NewRouter()
-	r.Get("/nodeinfo", NodeInformation(p, s))
+	r.Get("/nodeinfo", NodeInformation(deps))
 
 	return r
 }

@@ -30,14 +30,14 @@
 package auth
 
 import (
-	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
+	"github.com/getpolygon/corexp/internal/deps"
 	"github.com/go-chi/chi/v5"
 )
 
-func Router(p *postgres_codegen.Queries) *chi.Mux {
+func Router(deps *deps.Dependencies) *chi.Mux {
 	r := chi.NewRouter()
 	r.Post("/signup", SignUp())
-	r.Post("/signin", SignIn(p))
+	r.Post("/signin", SignIn(deps))
 	r.Post("/signup/confirmation", SignUpConfirmation())
 
 	return r

@@ -35,7 +35,7 @@ import (
 	"net/http"
 
 	"gitea.com/go-chi/binding"
-	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
+	"github.com/getpolygon/corexp/internal/deps"
 	"github.com/go-chi/render"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -51,17 +51,24 @@ func SignUpConfirmation() http.HandlerFunc {
 // The sign in route is where the users will be able to and
 // consume the API via the provided jwt token send in the
 // JSON response.
-func SignIn(p *postgres_codegen.Queries) http.HandlerFunc {
+func SignIn(deps *deps.Dependencies) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body := new(SignInRequestBody)
+		// Parsing the values from the request payload to the newly created
+		// body variable, with corresponding values. This function, however,
+		// does not validate the request payload.
 		if err := binding.Bind(r, body); err != nil {
 			render.Status(r, http.StatusBadRequest)
 			render.JSON(w, r, err)
 			return
 		}
 
-		user, err := p.GetFullUserByEmail(r.Context(), body.Email)
+		user, err := deps.Postgres.GetFullUserByEmail(r.Context(), body.Email)
 		if err != nil {
+			// If nothing was returned by the SQL query, that means
+			// that the user does not exist, however, the error will
+			// need to be handled, since we are not getting the user
+			// as a `nil`.
 			if errors.Is(err, sql.ErrNoRows) {
 				render.Status(r, http.StatusForbidden)
 				render.JSON(w, r, "user not found")
@@ -74,13 +81,18 @@ func SignIn(p *postgres_codegen.Queries) http.HandlerFunc {
 		}
 
 		passwordHash, providedPass := []byte(user.Password), []byte(body.Password)
+		// Comparing the passwords provided by the user and the
+		// hashed one, stored in the database.
 		err = bcrypt.CompareHashAndPassword(passwordHash, providedPass)
 		if err != nil {
+			// Comparison fails and the passwords do not match.
 			render.Status(r, http.StatusForbidden)
 			render.JSON(w, r, "invalid password.")
 			return
 		}
 
+		// Generating a JWT for the user, using only their ID
+		// for the "sub" field.
 		token, err := GenTokenWithUserID(user.ID)
 		if err != nil {
 			render.Status(r, http.StatusInternalServerError)
