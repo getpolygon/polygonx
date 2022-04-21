@@ -40,10 +40,13 @@ from "users" where "username" = $1 limit 1;
 -- name: GetFullUserByEmail :one
 -- This query should only be used for retrieving private
 -- user information.
-select * from "users" where "email" = $1 LIMIT 1;
+select * from "users" where "email" = $1 limit 1;
+
+-- name: GetUserByEmailOrUsername :one
+select * from "users" where "email" = $1 or "username" = $2 limit 1;
 
 -- name: CheckUserExistsByID :one
-select 1::boolean from "users" where "id" = $1 LIMIT 1;
+select 1::boolean from "users" where "id" = $1 limit 1;
 
 -- name: InsertUser :one
 -- This query is only used whenever a new user is created

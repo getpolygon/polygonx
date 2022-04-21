@@ -11,7 +11,7 @@ import (
 )
 
 const checkUserExistsByID = `-- name: CheckUserExistsByID :one
-select 1::boolean from "users" where "id" = $1 LIMIT 1
+select 1::boolean from "users" where "id" = $1 limit 1
 `
 
 func (q *Queries) CheckUserExistsByID(ctx context.Context, id string) (bool, error) {
@@ -44,7 +44,7 @@ func (q *Queries) GetActiveUsersCountMonth(ctx context.Context) (int64, error) {
 }
 
 const getFullUserByEmail = `-- name: GetFullUserByEmail :one
-select id, name, email, password, username, online_at, created_at from "users" where "email" = $1 LIMIT 1
+select id, name, email, password, username, online_at, created_at from "users" where "email" = $1 limit 1
 `
 
 // This query should only be used for retrieving private
@@ -132,6 +132,30 @@ func (q *Queries) GetTotalUsersCount(ctx context.Context) (int64, error) {
 	var count int64
 	err := row.Scan(&count)
 	return count, err
+}
+
+const getUserByEmailOrUsername = `-- name: GetUserByEmailOrUsername :one
+select id, name, email, password, username, online_at, created_at from "users" where "email" = $1 or "username" = $2 limit 1
+`
+
+type GetUserByEmailOrUsernameParams struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) GetUserByEmailOrUsername(ctx context.Context, arg GetUserByEmailOrUsernameParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmailOrUsername, arg.Email, arg.Username)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.Username,
+		&i.OnlineAt,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const insertUser = `-- name: InsertUser :one

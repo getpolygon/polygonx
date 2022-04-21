@@ -7,15 +7,18 @@ require (
 	github.com/getpolygon/hydra v0.0.0-20220413164752-38c7b3bdf7b4
 	github.com/go-chi/jwtauth v1.2.0
 	github.com/go-chi/render v1.0.1
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/lestrrat-go/jwx v1.2.23
 	github.com/lib/pq v1.10.5
 	github.com/ory/graceful v0.1.2
+	github.com/sony/sonyflake v1.0.0
 )
 
 require (
 	github.com/caarlos0/env/v6 v6.9.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-chi/chi v1.5.4 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -32,6 +35,7 @@ require (
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
+	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

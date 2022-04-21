@@ -36,6 +36,8 @@ import (
 
 	"gitea.com/go-chi/binding"
 	"github.com/getpolygon/corexp/internal/deps"
+	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
+	"github.com/getpolygon/corexp/internal/services/cache"
 	"github.com/go-chi/render"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -75,8 +77,7 @@ func SignIn(deps *deps.Dependencies) http.HandlerFunc {
 				return
 			}
 
-			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
@@ -95,8 +96,7 @@ func SignIn(deps *deps.Dependencies) http.HandlerFunc {
 		// for the "sub" field.
 		token, err := GenTokenWithUserID(user.ID)
 		if err != nil {
-			render.Status(r, http.StatusInternalServerError)
-			render.JSON(w, r, err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
@@ -110,8 +110,40 @@ func SignIn(deps *deps.Dependencies) http.HandlerFunc {
 // executes instantly, without any need for email validation if
 // the `polygon.security.accounts.forceEmailVerification` option
 // in the config is either unspecified or is of value `false`.
-func SignUp() http.HandlerFunc {
+func SignUp(d *deps.Dependencies) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, body := r.Context(), new(SignUpRequestBody)
+		if err := binding.Bind(r, body); err != nil {
+			render.Status(r, http.StatusBadRequest)
+			render.JSON(w, r, err)
+			return
+		}
 
+		pld := postgres_codegen.GetUserByEmailOrUsernameParams{
+			Email:    body.Email,
+			Username: body.Username,
+		}
+		if _, err := d.Postgres.GetUserByEmailOrUsername(ctx, pld); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			render.Status(r, http.StatusForbidden)
+			render.JSON(w, r, "user already exists: "+err.Error())
+			return
+		} else {
+			pld := cache.TemporaryUserSignUpPayload{
+				Name:     body.Name,
+				Email:    body.Email,
+				Username: body.Username,
+			}
+
+			// Persisting registration information temporarily in Redis
+			// and provisioning a token, for verification purposes. The
+			// token will be valid for only 20 minutes.
+			_, err := cache.TemporaryUserSignUp(ctx, d.Redis, pld)
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+
+			// TODO: Send the token to the user for verification.
+		}
 	}
 }

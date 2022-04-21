@@ -27,18 +27,40 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package auth
+package cache
 
 import (
-	"github.com/getpolygon/corexp/internal/deps"
-	"github.com/go-chi/chi/v5"
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/sony/sonyflake"
 )
 
-func Router(deps *deps.Dependencies) *chi.Mux {
-	r := chi.NewRouter()
-	r.Post("/signup", SignUp(deps))
-	r.Post("/signin", SignIn(deps))
-	r.Post("/signup/confirmation", SignUpConfirmation())
+const TemporaryUserSignUpExpirationTime = 20 * time.Minute
 
-	return r
+type TemporaryUserSignUpPayload struct {
+	Name     string
+	Email    string
+	Username string
+}
+
+// This will temporarily persist user's registration details to Redis, for
+// 20 minutes, and after that, if the account was not activated with the
+// token, the token will auto-remove.
+func TemporaryUserSignUp(ctx context.Context, r *redis.Client, p TemporaryUserSignUpPayload) (string, error) {
+	// Generating a random token.
+	genToken, err := sonyflake.NewSonyflake(sonyflake.Settings{}).NextID()
+	if err != nil {
+		return "", err
+	}
+
+	tkn := fmt.Sprint(genToken)
+	// Persisting the information in Redis.
+	if err := r.Set(ctx, fmt.Sprint(tkn), p, TemporaryUserSignUpExpirationTime).Err(); err != nil {
+		return "", err
+	}
+
+	return tkn, nil
 }
