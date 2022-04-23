@@ -31,6 +31,7 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -38,6 +39,7 @@ import (
 	"github.com/sony/sonyflake"
 )
 
+const TemporaryUserSignUpPrefix = "auth.tmp"
 const TemporaryUserSignUpExpirationTime = 20 * time.Minute
 
 type TemporaryUserSignUpPayload struct {
@@ -57,10 +59,28 @@ func TemporaryUserSignUp(ctx context.Context, r *redis.Client, p TemporaryUserSi
 	}
 
 	tkn := fmt.Sprint(genToken)
+	payload, err := json.Marshal(p)
+	if err != nil {
+		return "", err
+	}
+
 	// Persisting the information in Redis.
-	if err := r.Set(ctx, fmt.Sprint(tkn), p, TemporaryUserSignUpExpirationTime).Err(); err != nil {
+	if err := r.Set(ctx, TemporaryUserSignUpPrefix+":"+fmt.Sprint(tkn), payload, TemporaryUserSignUpExpirationTime).Err(); err != nil {
 		return "", err
 	}
 
 	return tkn, nil
+}
+
+// This will return temporarily persisted user information for sign up
+// from Redis.
+func GetTemporaryUserSignUp(ctx context.Context, r *redis.Client, token string) (*TemporaryUserSignUpPayload, error) {
+	command := r.Get(ctx, TemporaryUserSignUpPrefix+":"+token)
+	if err := command.Err(); err != nil {
+		return nil, err
+	}
+
+	var payload *TemporaryUserSignUpPayload
+	err := command.Scan(&payload)
+	return payload, err
 }

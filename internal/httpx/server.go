@@ -54,6 +54,6 @@ func NewGracefulServer(a string, h *chi.Mux) GracefulServer {
 // Start the server, with support for graceful shutdowns.
 func (s *GracefulServer) StartWithGracefulShutdown() {
 	if err := graceful.Graceful(s.ListenAndServe, s.Shutdown); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 }

@@ -37,7 +37,6 @@ import (
 	"gitea.com/go-chi/binding"
 	"github.com/getpolygon/corexp/internal/deps"
 	"github.com/getpolygon/corexp/internal/gen/postgres_codegen"
-	"github.com/getpolygon/corexp/internal/services/cache"
 	"github.com/go-chi/render"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -102,7 +101,6 @@ func SignIn(deps *deps.Dependencies) http.HandlerFunc {
 
 		render.Status(r, http.StatusOK)
 		render.JSON(w, r, token)
-		return
 	}
 }
 
@@ -128,22 +126,7 @@ func SignUp(d *deps.Dependencies) http.HandlerFunc {
 			render.JSON(w, r, "user already exists: "+err.Error())
 			return
 		} else {
-			pld := cache.TemporaryUserSignUpPayload{
-				Name:     body.Name,
-				Email:    body.Email,
-				Username: body.Username,
-			}
-
-			// Persisting registration information temporarily in Redis
-			// and provisioning a token, for verification purposes. The
-			// token will be valid for only 20 minutes.
-			_, err := cache.TemporaryUserSignUp(ctx, d.Redis, pld)
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-
-			// TODO: Send the token to the user for verification.
+			// TODO: Not implemented.
 		}
 	}
 }

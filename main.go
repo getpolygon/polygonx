@@ -40,7 +40,7 @@ import (
 func main() {
 	deps, err := deps.New()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	web, addr := web.New(deps), deps.Settings.Address

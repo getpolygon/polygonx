@@ -45,9 +45,10 @@ const (
 )
 
 type SMTPSettings struct {
+	User     string `yaml:"user" validate:"required" env:"POLYGON_SMTP_USER"`
 	Password string `yaml:"password" validate:"required" env:"POLYGON_SMTP_PASSWORD"`
 	Host     string `yaml:"host" validate:"required" validate:"uri" env:"POLYGON_SMTP_HOST"`
-	User     string `yaml:"user" validate:"required" validate:"uri" env:"POLYGON_SMTP_USER"`
+	From     string `yaml:"from" validate:"required" validate:"email" env:"POLYGON_SMTP_FROM"`
 	Port     int16  `yaml:"port" validate:"required" validate:"number" env:"POLYGON_SMTP_PORT"`
 }
 

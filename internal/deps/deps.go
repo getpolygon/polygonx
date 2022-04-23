@@ -26,9 +26,12 @@ func New() (*Dependencies, error) {
 		return nil, err
 	}
 
-	redis := redis.NewClient(&redis.Options{
-		Addr: settings.Redis,
-	})
+	opt, err := redis.ParseURL(settings.Redis)
+	if err != nil {
+		return nil, err
+	}
+
+	redis := redis.NewClient(opt)
 	if err := redis.Ping(context.Background()).Err(); err != nil {
 		return nil, err
 	}
